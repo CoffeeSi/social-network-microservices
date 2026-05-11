@@ -16,6 +16,7 @@ type UserDAO struct {
 	Password  string        `bson:"password"`
 	DOB       time.Time     `bson:"dob"`
 	IsActive  bool          `bson:"is_active"`
+	CreatedAt time.Time     `bson:"created_at"`
 }
 
 func FromUserToDao(u model.User) (UserDAO, error) {
@@ -27,11 +28,6 @@ func FromUserToDao(u model.User) (UserDAO, error) {
 			return UserDAO{}, fmt.Errorf("invalid object id: %w", err)
 		}
 	}
-	layout := model.DateLayout
-	t, err := time.Parse(layout, u.DOB)
-	if err != nil {
-		return UserDAO{}, fmt.Errorf("invalid date format: %w", err)
-	}
 
 	return UserDAO{
 		ID:        objId,
@@ -39,7 +35,7 @@ func FromUserToDao(u model.User) (UserDAO, error) {
 		LastName:  u.LastName,
 		Email:     u.Email,
 		Password:  u.Password,
-		DOB:       t,
+		DOB:       u.DOB,
 		IsActive:  u.IsActive,
 	}, nil
 }
@@ -51,8 +47,9 @@ func FromDaoToUser(u UserDAO) model.User {
 		LastName:  u.LastName,
 		Email:     u.Email,
 		Password:  "",
-		DOB:       u.DOB.Format(model.DateLayout),
+		DOB:       u.DOB,
 		IsActive:  u.IsActive,
+		CreatedAt: u.CreatedAt,
 	}
 }
 

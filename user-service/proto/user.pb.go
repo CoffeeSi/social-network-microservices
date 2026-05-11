@@ -291,7 +291,7 @@ func (x *GetUserRequest) GetId() string {
 type ListUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -333,11 +333,11 @@ func (x *ListUsersRequest) GetPageSize() int32 {
 	return 0
 }
 
-func (x *ListUsersRequest) GetPageToken() string {
+func (x *ListUsersRequest) GetPage() int32 {
 	if x != nil {
-		return x.PageToken
+		return x.Page
 	}
-	return ""
+	return 0
 }
 
 type DeleteUserRequest struct {
@@ -515,8 +515,9 @@ func (x *UserUpdateData) GetDob() *timestamppb.Timestamp {
 type ListUsersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	TotalPages    int32                  `protobuf:"varint,4,opt,name=total_pages,json=totalPages,proto3" json:"total_pages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -558,16 +559,23 @@ func (x *ListUsersResponse) GetUsers() []*User {
 	return nil
 }
 
-func (x *ListUsersResponse) GetNextPageToken() string {
-	if x != nil {
-		return x.NextPageToken
-	}
-	return ""
-}
-
 func (x *ListUsersResponse) GetTotalCount() int32 {
 	if x != nil {
 		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *ListUsersResponse) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListUsersResponse) GetTotalPages() int32 {
+	if x != nil {
+		return x.TotalPages
 	}
 	return 0
 }
@@ -598,11 +606,10 @@ const file_proto_user_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\" \n" +
 	"\x0eGetUserRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"N\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
 	"\x10ListUsersRequest\x12\x1b\n" +
-	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
-	"\n" +
-	"page_token\x18\x02 \x01(\tR\tpageToken\"#\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\"#\n" +
 	"\x11DeleteUserRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x8a\x01\n" +
 	"\x11UpdateUserRequest\x12\x0e\n" +
@@ -615,13 +622,15 @@ const file_proto_user_proto_rawDesc = "" +
 	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
 	"\tlast_name\x18\x02 \x01(\tR\blastName\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12,\n" +
-	"\x03dob\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x03dob\"~\n" +
+	"\x03dob\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x03dob\"\x8b\x01\n" +
 	"\x11ListUsersResponse\x12 \n" +
 	"\x05users\x18\x01 \x03(\v2\n" +
-	".user.UserR\x05users\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1f\n" +
-	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCount2\xe4\x02\n" +
+	".user.UserR\x05users\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1f\n" +
+	"\vtotal_pages\x18\x04 \x01(\x05R\n" +
+	"totalPages2\xe4\x02\n" +
 	"\vUserService\x121\n" +
 	"\n" +
 	"CreateUser\x12\x17.user.CreateUserRequest\x1a\n" +

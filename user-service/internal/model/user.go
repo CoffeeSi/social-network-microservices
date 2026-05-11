@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+var EmailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
 const DateLayout = "02-01-2006"
 
@@ -16,8 +16,9 @@ type User struct {
 	LastName  string
 	Email     string
 	Password  string
-	DOB       string
+	DOB       time.Time
 	IsActive  bool
+	CreatedAt time.Time
 }
 
 func (u User) Validate() error {
@@ -30,18 +31,14 @@ func (u User) Validate() error {
 	if u.Email == "" {
 		return errors.New("email is required")
 	}
-	if !emailRegex.MatchString(u.Email) {
+	if !EmailRegex.MatchString(u.Email) {
 		return errors.New("invalid email format")
 	}
-	if u.DOB == "" {
+	if u.DOB.IsZero() {
 		return errors.New("dob is required")
 	}
-	t, err := time.Parse(DateLayout, u.DOB)
-	if err != nil {
-		return errors.New("invalid dob format, expected DD-MM-YYYY")
-	}
 	minAge := time.Now().AddDate(-13, 0, 0)
-	if t.After(minAge) {
+	if u.DOB.After(minAge) {
 		return errors.New("user must be at least 13 years old")
 	}
 	return nil
