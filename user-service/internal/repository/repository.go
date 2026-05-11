@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
@@ -30,6 +31,7 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User
 	if err != nil {
 		return model.User{}, err
 	}
+	daouser.CreatedAt = time.Now().UTC()
 	result, err := ur.col.InsertOne(ctx, daouser)
 	if mongo.IsDuplicateKeyError(err) {
 		return model.User{}, ErrDuplicateEmail
@@ -38,53 +40,67 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User
 		return model.User{}, err
 	}
 	user.ID = result.InsertedID.(bson.ObjectID).Hex()
-
+	user.CreatedAt = daouser.CreatedAt
 	return user, nil
 }
 
-func (ur *UserRepo) GetUsers(ctx context.Context, pageSize int32, pageToken string) ([]model.User, string, error) {
+func (ur *UserRepo) GetUsers(ctx context.Context, pageSize, page int32) ([]model.User, int32, error) {
 	if pageSize <= 0 {
 		pageSize = 20
 	}
 	if pageSize > 100 {
 		pageSize = 100
 	}
-
-	filter := bson.M{}
-	if pageToken != "" {
-		lastID, err := bson.ObjectIDFromHex(pageToken)
-		if err != nil {
-			return nil, "", ErrInvalidID
-		}
-		filter = bson.M{"_id": bson.M{"$gt": lastID}}
+	if page <= 0 {
+		page = 1
 	}
 
-	opts := options.Find().
-		SetSort(bson.D{{Key: "_id", Value: 1}}).
-		SetLimit(int64(pageSize))
+	skip := int64((page - 1) * pageSize)
 
-	cursor, err := ur.col.Find(ctx, filter, opts)
+	pipeline := mongo.Pipeline{
+		{{Key: "$sort", Value: bson.D{{Key: "_id", Value: 1}}}},
+		{{Key: "$facet", Value: bson.D{
+			{Key: "data", Value: bson.A{
+				bson.D{{Key: "$skip", Value: skip}},
+				bson.D{{Key: "$limit", Value: int64(pageSize)}},
+			}},
+			{Key: "total", Value: bson.A{
+				bson.D{{Key: "$count", Value: "count"}},
+			}},
+		}}},
+	}
+
+	cursor, err := ur.col.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to find users: %w", err)
+		return nil, 0, fmt.Errorf("failed to aggregate users: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	var daos []dao.UserDAO
-	if err := cursor.All(ctx, &daos); err != nil {
-		return nil, "", fmt.Errorf("failed to decode users: %w", err)
+	var result []struct {
+		Data  []dao.UserDAO `bson:"data"`
+		Total []struct {
+			Count int32 `bson:"count"`
+		} `bson:"total"`
+	}
+	if err := cursor.All(ctx, &result); err != nil {
+		return nil, 0, fmt.Errorf("failed to decode result: %w", err)
 	}
 
-	users := make([]model.User, 0, len(daos))
-	for _, u := range daos {
+	if len(result) == 0 {
+		return []model.User{}, 0, nil
+	}
+
+	var total int32
+	if len(result[0].Total) > 0 {
+		total = result[0].Total[0].Count
+	}
+
+	users := make([]model.User, 0, len(result[0].Data))
+	for _, u := range result[0].Data {
 		users = append(users, dao.FromDaoToUser(u))
 	}
 
-	var nextToken string
-	if int32(len(daos)) == pageSize {
-		nextToken = daos[len(daos)-1].ID.Hex()
-	}
-
-	return users, nextToken, nil
+	return users, total, nil
 }
 func (ur *UserRepo) GetUser(ctx context.Context, id string) (model.User, error) {
 	objID, err := bson.ObjectIDFromHex(id)
@@ -115,18 +131,18 @@ func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.U
 		updateFields["last_name"] = updateData.LastName
 	}
 	if updateData.Email != "" {
-		updateFields["email"] = updateData.LastName
-	}
-	if updateData.DOB != "" {
-		t, err := time.Parse(model.DateLayout, updateData.DOB)
-		if err != nil {
-			return fmt.Errorf("invalid date format: %w", err)
+		email := strings.TrimSpace(strings.ToLower(updateData.Email))
+		if match := model.EmailRegex.MatchString(email); !match {
+			return ErrInvalidEmail
 		}
-		updateFields["dob"] = t
+		updateFields["email"] = email
+	}
+	if !updateData.DOB.IsZero() {
+		updateFields["dob"] = updateData.DOB
 	}
 
 	if len(updateFields) == 0 {
-		return fmt.Errorf("no fields to update")
+		return ErrNoFieldsToUpdate
 	}
 	result, err := ur.col.UpdateOne(
 		ctx,
@@ -135,7 +151,7 @@ func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.U
 	)
 
 	if err != nil {
-		return err
+		return ErrOnUpdate
 	}
 
 	if result.MatchedCount == 0 {
@@ -146,6 +162,7 @@ func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.U
 }
 func (ur *UserRepo) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var u dao.UserDAO
+	email = strings.TrimSpace(strings.ToLower(email))
 	err := ur.col.FindOne(ctx, bson.M{"email": email}).Decode(&u)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
