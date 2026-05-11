@@ -44,11 +44,5 @@ func (u User) Validate() error {
 	if t.After(minAge) {
 		return errors.New("user must be at least 13 years old")
 	}
-	if u.Password == "" {
-		return errors.New("password is required")
-	}
-	if len(u.Password) < 8 {
-		return errors.New("password must be at least 8 characters")
-	}
 	return nil
 }

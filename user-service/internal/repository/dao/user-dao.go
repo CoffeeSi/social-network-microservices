@@ -5,29 +5,29 @@ import (
 	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type UserDAO struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	FirstName string             `bson:"first_name"`
-	LastName  string             `bson:"last_name"`
-	Email     string             `bson:"email"`
-	Password  string             `bson:"password"`
-	DOB       time.Time          `bson:"dob"`
-	IsActive  bool               `bson:"is_active"`
+	ID        bson.ObjectID `bson:"_id,omitempty"`
+	FirstName string        `bson:"first_name"`
+	LastName  string        `bson:"last_name"`
+	Email     string        `bson:"email"`
+	Password  string        `bson:"password"`
+	DOB       time.Time     `bson:"dob"`
+	IsActive  bool          `bson:"is_active"`
 }
 
 func FromUserToDao(u model.User) (UserDAO, error) {
-	var objId primitive.ObjectID
+	var objId bson.ObjectID
 	if u.ID != "" {
 		var err error
-		objId, err = primitive.ObjectIDFromHex(u.ID)
+		objId, err = bson.ObjectIDFromHex(u.ID)
 		if err != nil {
 			return UserDAO{}, fmt.Errorf("invalid object id: %w", err)
 		}
 	}
-	layout := "02-01-2006"
+	layout := model.DateLayout
 	t, err := time.Parse(layout, u.DOB)
 	if err != nil {
 		return UserDAO{}, fmt.Errorf("invalid date format: %w", err)
@@ -51,7 +51,7 @@ func FromDaoToUser(u UserDAO) model.User {
 		LastName:  u.LastName,
 		Email:     u.Email,
 		Password:  "",
-		DOB:       u.DOB.Format("02-01-2006"),
+		DOB:       u.DOB.Format(model.DateLayout),
 		IsActive:  u.IsActive,
 	}
 }

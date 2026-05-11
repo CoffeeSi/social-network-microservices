@@ -8,8 +8,7 @@ import (
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/repository/dao"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -38,33 +37,57 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User
 	if err != nil {
 		return model.User{}, err
 	}
-	user.ID = result.InsertedID.(primitive.ObjectID).Hex()
+	user.ID = result.InsertedID.(bson.ObjectID).Hex()
 
 	return user, nil
 }
 
-func (ur *UserRepo) GetUsers(ctx context.Context) ([]model.User, error) {
-	cursor, err := ur.col.Find(ctx, bson.M{})
+func (ur *UserRepo) GetUsers(ctx context.Context, pageSize int32, pageToken string) ([]model.User, string, error) {
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	filter := bson.M{}
+	if pageToken != "" {
+		lastID, err := bson.ObjectIDFromHex(pageToken)
+		if err != nil {
+			return nil, "", ErrInvalidID
+		}
+		filter = bson.M{"_id": bson.M{"$gt": lastID}}
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "_id", Value: 1}}).
+		SetLimit(int64(pageSize))
+
+	cursor, err := ur.col.Find(ctx, filter, opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find users: %w", err)
+		return nil, "", fmt.Errorf("failed to find users: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var daos []dao.UserDAO
 	if err := cursor.All(ctx, &daos); err != nil {
-		return nil, fmt.Errorf("failed to decode users: %w", err)
+		return nil, "", fmt.Errorf("failed to decode users: %w", err)
 	}
 
-	result := make([]model.User, 0, len(daos))
+	users := make([]model.User, 0, len(daos))
 	for _, u := range daos {
-		userModel := dao.FromDaoToUser(u)
-		result = append(result, userModel)
+		users = append(users, dao.FromDaoToUser(u))
 	}
 
-	return result, nil
+	var nextToken string
+	if int32(len(daos)) == pageSize {
+		nextToken = daos[len(daos)-1].ID.Hex()
+	}
+
+	return users, nextToken, nil
 }
 func (ur *UserRepo) GetUser(ctx context.Context, id string) (model.User, error) {
-	objID, err := primitive.ObjectIDFromHex(id)
+	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return model.User{}, ErrInvalidID
 	}
@@ -79,7 +102,7 @@ func (ur *UserRepo) GetUser(ctx context.Context, id string) (model.User, error) 
 	return dao.FromDaoToUser(u), nil
 }
 func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.User) error {
-	objID, err := primitive.ObjectIDFromHex(id)
+	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return ErrInvalidID
 	}
@@ -90,6 +113,9 @@ func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.U
 	}
 	if updateData.LastName != "" {
 		updateFields["last_name"] = updateData.LastName
+	}
+	if updateData.Email != "" {
+		updateFields["email"] = updateData.LastName
 	}
 	if updateData.DOB != "" {
 		t, err := time.Parse(model.DateLayout, updateData.DOB)
