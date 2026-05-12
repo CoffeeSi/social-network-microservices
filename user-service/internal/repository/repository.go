@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/repository/dao"
@@ -31,7 +30,6 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User
 	if err != nil {
 		return model.User{}, err
 	}
-	daouser.CreatedAt = time.Now().UTC()
 	result, err := ur.col.InsertOne(ctx, daouser)
 	if mongo.IsDuplicateKeyError(err) {
 		return model.User{}, ErrDuplicateEmail
