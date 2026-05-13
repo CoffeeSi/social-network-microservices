@@ -37,6 +37,7 @@ func FromUserToDao(u model.User) (UserDAO, error) {
 		Password:  u.Password,
 		DOB:       u.DOB,
 		IsActive:  u.IsActive,
+		CreatedAt: u.CreatedAt,
 	}, nil
 }
 

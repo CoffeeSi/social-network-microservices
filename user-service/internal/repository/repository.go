@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/repository/dao"
@@ -43,15 +42,6 @@ func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User
 }
 
 func (ur *UserRepo) GetUsers(ctx context.Context, pageSize, page int32) ([]model.User, int32, error) {
-	if pageSize <= 0 {
-		pageSize = 20
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
-	if page <= 0 {
-		page = 1
-	}
 
 	skip := int64((page - 1) * pageSize)
 
@@ -111,14 +101,15 @@ func (ur *UserRepo) GetUser(ctx context.Context, id string) (model.User, error) 
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return model.User{}, ErrUserNotFound
 		}
+
 		return model.User{}, err
 	}
 	return dao.FromDaoToUser(u), nil
 }
-func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.User) error {
+func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.User) (model.User, error) {
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
-		return ErrInvalidID
+		return model.User{}, ErrInvalidID
 	}
 	updateFields := bson.M{}
 
@@ -129,38 +120,38 @@ func (ur *UserRepo) PatchUser(ctx context.Context, id string, updateData model.U
 		updateFields["last_name"] = updateData.LastName
 	}
 	if updateData.Email != "" {
-		email := strings.TrimSpace(strings.ToLower(updateData.Email))
-		if match := model.EmailRegex.MatchString(email); !match {
-			return ErrInvalidEmail
-		}
-		updateFields["email"] = email
+
+		updateFields["email"] = updateData.Email
 	}
 	if !updateData.DOB.IsZero() {
 		updateFields["dob"] = updateData.DOB
 	}
 
 	if len(updateFields) == 0 {
-		return ErrNoFieldsToUpdate
+		return model.User{}, ErrNoFieldsToUpdate
 	}
-	result, err := ur.col.UpdateOne(
+	resultDao := dao.UserDAO{}
+	opts := options.FindOneAndUpdate().
+		SetReturnDocument(options.After)
+	err = ur.col.FindOneAndUpdate(
 		ctx,
 		bson.M{"_id": objID},
 		bson.M{"$set": updateFields},
-	)
+		opts,
+	).Decode(&resultDao)
 
 	if err != nil {
-		return ErrOnUpdate
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return model.User{}, ErrUserNotFound
+		}
+		return model.User{}, err
 	}
 
-	if result.MatchedCount == 0 {
-		return ErrUserNotFound
-	}
-
-	return nil
+	resultModel := dao.FromDaoToUser(resultDao)
+	return resultModel, nil
 }
 func (ur *UserRepo) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var u dao.UserDAO
-	email = strings.TrimSpace(strings.ToLower(email))
 	err := ur.col.FindOne(ctx, bson.M{"email": email}).Decode(&u)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -169,4 +160,32 @@ func (ur *UserRepo) GetUserByEmail(ctx context.Context, email string) (model.Use
 		return model.User{}, err
 	}
 	return dao.FromDaoToUserWithPassword(u), nil
+}
+
+func (ur *UserRepo) DeleteUser(ctx context.Context, id string) error {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return ErrInvalidID
+	}
+
+	result, err := ur.col.DeleteOne(ctx, bson.M{"_id": objID})
+	if err != nil {
+		return err
+	}
+	if result.DeletedCount == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+func (ur *UserRepo) ChangePassword(ctx context.Context, id string, password string) error {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return ErrInvalidID
+	}
+	_, err = ur.col.UpdateByID(ctx, objID, bson.M{"$set": bson.M{"password": password}})
+	if err != nil {
+		return err
+	}
+	return nil
 }
