@@ -8,6 +8,4 @@ type CreateUserDTO struct {
 	Email     string
 	Password  string
 	DOB       time.Time
-	IsActive  bool
-	CreatedAt time.Time
 }

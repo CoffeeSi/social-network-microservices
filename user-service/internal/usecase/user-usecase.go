@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/usecase/dto"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepo interface {
@@ -18,6 +18,7 @@ type UserRepo interface {
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	DeleteUser(ctx context.Context, id string) error
 	ChangePassword(ctx context.Context, id, password string) error
+	WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 type UserUseCase struct {
@@ -31,10 +32,11 @@ func NewUserUseCase(repo UserRepo) *UserUseCase {
 }
 
 func (us *UserUseCase) CreateUser(ctx context.Context, dto dto.CreateUserDTO) (model.User, error) {
+	email := strings.TrimSpace(strings.ToLower(dto.Email))
 	userModel := model.User{
 		FirstName: dto.FirstName,
 		LastName:  dto.LastName,
-		Email:     dto.Email,
+		Email:     email,
 		DOB:       dto.DOB,
 		Password:  dto.Password,
 		IsActive:  false,
@@ -53,7 +55,7 @@ func (us *UserUseCase) CreateUser(ctx context.Context, dto dto.CreateUserDTO) (m
 
 func (us *UserUseCase) GetUserByID(ctx context.Context, id string) (model.User, error) {
 	if id == "" {
-		return model.User{}, errors.New("id is empty")
+		return model.User{}, ErrIDEmpty
 	}
 	res, err := us.repo.GetUser(ctx, id)
 	if err != nil {
@@ -81,18 +83,22 @@ func (us *UserUseCase) GetUsers(ctx context.Context, pageSize, page int32) ([]mo
 
 func (us *UserUseCase) PatchUser(ctx context.Context, dto dto.PatchUserDTO) (model.User, error) {
 	//email check
+	if dto.ID == "" {
+		return model.User{}, ErrIDEmpty
+	}
 	if !model.EmailRegex.MatchString(dto.Email) && dto.Email != "" {
-		return model.User{}, errors.New("email is bad")
+		return model.User{}, ErrInvalidEmail
 	}
 	//age check?
 	minAge := time.Now().AddDate(-13, 0, 0)
 	if !dto.DOB.IsZero() && dto.DOB.After(minAge) {
-		return model.User{}, errors.New("user must be at least 13 years old")
+		return model.User{}, ErrTooYoung
 	}
+	email := strings.TrimSpace(strings.ToLower(dto.Email))
 	userModel := model.User{
 		FirstName: dto.FirstName,
 		LastName:  dto.LastName,
-		Email:     dto.Email,
+		Email:     email,
 		DOB:       dto.DOB,
 	}
 	res, err := us.repo.PatchUser(ctx, dto.ID, userModel)
@@ -105,7 +111,7 @@ func (us *UserUseCase) PatchUser(ctx context.Context, dto dto.PatchUserDTO) (mod
 func (us *UserUseCase) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" || !model.EmailRegex.MatchString(email) {
-		return model.User{}, errors.New("email is empty or bad")
+		return model.User{}, ErrInvalidEmail
 	}
 	res, err := us.repo.GetUserByEmail(ctx, email)
 	if err != nil {
@@ -115,7 +121,7 @@ func (us *UserUseCase) GetUserByEmail(ctx context.Context, email string) (model.
 }
 func (us *UserUseCase) DeleteUser(ctx context.Context, id string) error {
 	if id == "" {
-		return errors.New("Id is empty")
+		return ErrIDEmpty
 	}
 	err := us.repo.DeleteUser(ctx, id)
 	if err != nil {
@@ -124,14 +130,28 @@ func (us *UserUseCase) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-func (us *UserUseCase) ChangePassword(ctx context.Context, id, password string) error {
+func (us *UserUseCase) ChangePassword(ctx context.Context, id, oldPassword, newPassword string) error {
 	if id == "" {
-		return errors.New("Id is empty")
+		return ErrIDEmpty
 	}
-	err := us.repo.ChangePassword(ctx, id, password)
-	if err != nil {
-		return err
+	if newPassword == "" {
+		return ErrInvalidPassword
 	}
-	return nil
+	return us.repo.WithTransaction(ctx, func(txCtx context.Context) error {
+		user, err := us.repo.GetUser(txCtx, id)
+		if err != nil {
+			return err
+		}
 
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+			return ErrInvalidPassword
+		}
+
+		hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		return us.repo.ChangePassword(txCtx, id, string(hashed))
+	})
 }

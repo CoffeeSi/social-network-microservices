@@ -23,7 +23,18 @@ func NewUserRepo(col *mongo.Collection) *UserRepo {
 	})
 	return &UserRepo{col: col}
 }
+func (ur *UserRepo) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	session, err := ur.col.Database().Client().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
 
+	_, err = session.WithTransaction(ctx, func(sessCtx context.Context) (interface{}, error) {
+		return nil, fn(sessCtx)
+	})
+	return err
+}
 func (ur *UserRepo) CreateUser(ctx context.Context, user model.User) (model.User, error) {
 	daouser, err := dao.FromUserToDao(user)
 	if err != nil {
@@ -178,14 +189,17 @@ func (ur *UserRepo) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-func (ur *UserRepo) ChangePassword(ctx context.Context, id string, password string) error {
+func (ur *UserRepo) ChangePassword(ctx context.Context, id, newPassword string) error {
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return ErrInvalidID
 	}
-	_, err = ur.col.UpdateByID(ctx, objID, bson.M{"$set": bson.M{"password": password}})
+	result, err := ur.col.UpdateByID(ctx, objID, bson.M{"$set": bson.M{"password": newPassword}})
 	if err != nil {
 		return err
+	}
+	if result.MatchedCount == 0 {
+		return ErrUserNotFound
 	}
 	return nil
 }
