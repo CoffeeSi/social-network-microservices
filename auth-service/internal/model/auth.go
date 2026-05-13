@@ -1,8 +1,11 @@
 package model
 
 type RegisterRequest struct {
-	Email    string
-	Password string
+	FirstName string
+	LastName  string
+	DOB       string
+	Email     string
+	Password  string
 }
 
 type LoginRequest struct {
@@ -15,6 +18,9 @@ type RefreshTokenRequest struct {
 }
 
 type Auth struct {
-	Email    string
-	Password string
+	FirstName string
+	LastName  string
+	DOB       string
+	Email     string
+	Password  string
 }

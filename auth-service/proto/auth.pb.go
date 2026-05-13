@@ -23,8 +23,11 @@ const (
 
 type RegisterUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	FirstName     string                 `protobuf:"bytes,1,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName      string                 `protobuf:"bytes,2,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	Dob           string                 `protobuf:"bytes,3,opt,name=dob,proto3" json:"dob,omitempty"`
+	Email         string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -57,6 +60,27 @@ func (x *RegisterUserRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use RegisterUserRequest.ProtoReflect.Descriptor instead.
 func (*RegisterUserRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *RegisterUserRequest) GetFirstName() string {
+	if x != nil {
+		return x.FirstName
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetLastName() string {
+	if x != nil {
+		return x.LastName
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetDob() string {
+	if x != nil {
+		return x.Dob
+	}
+	return ""
 }
 
 func (x *RegisterUserRequest) GetEmail() string {
@@ -314,10 +338,14 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\x05proto\"G\n" +
-	"\x13RegisterUserRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"0\n" +
+	"auth.proto\x12\x05proto\"\x95\x01\n" +
+	"\x13RegisterUserRequest\x12\x1d\n" +
+	"\n" +
+	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x02 \x01(\tR\blastName\x12\x10\n" +
+	"\x03dob\x18\x03 \x01(\tR\x03dob\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\"0\n" +
 	"\x14RegisterUserResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"D\n" +
 	"\x10LoginUserRequest\x12\x14\n" +
