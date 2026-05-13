@@ -13,6 +13,7 @@ service UserService{
     rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
     rpc UpdateUser(UpdateUserRequest) returns (User);
     rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
+    rpc GetUserByEmail(GetUserByEmailRequest) returns (UserWithPassword);
 }
 
 message CreateUserRequest {
@@ -38,6 +39,17 @@ message User {
     string email = 4;
     google.protobuf.Timestamp dob = 5;
     google.protobuf.Timestamp created_at = 6;
+    bool is_active = 7;
+}
+message UserWithPassword {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    google.protobuf.Timestamp dob = 5;
+    google.protobuf.Timestamp created_at = 6;
+    bool is_active = 7;
+    string password = 8;
 }
 message GetUserRequest{
 
@@ -73,4 +85,7 @@ message ListUsersResponse {
     int32 total_count         = 2;
     int32 page                = 3;
     int32 total_pages         = 4;
+}
+message GetUserByEmailRequest {
+    string email = 1;
 }

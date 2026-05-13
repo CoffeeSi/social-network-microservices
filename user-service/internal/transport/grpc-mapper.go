@@ -14,5 +14,19 @@ func userToProto(user *model.User) *pb.User {
 		Email:     user.Email,
 		Dob:       timestamppb.New(user.DOB),
 		CreatedAt: timestamppb.New(user.CreatedAt),
+		IsActive:  user.IsActive,
+	}
+}
+
+func userWithPasswordToProto(user *model.User) *pb.UserWithPassword {
+	return &pb.UserWithPassword{
+		Id:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Dob:       timestamppb.New(user.DOB),
+		CreatedAt: timestamppb.New(user.CreatedAt),
+		IsActive:  user.IsActive,
+		Password:  user.Password,
 	}
 }
