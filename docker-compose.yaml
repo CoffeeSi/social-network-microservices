@@ -19,17 +19,10 @@ services:
       - GRPC_PORT=50051
       - USER_GRPC_URL=user-service:50052
       - SECRET_KEY=secret-key
-
-  content-service:
-    build:
-      context: ./content-service
-      dockerfile: Dockerfile
-    container_name: content-service
+  user-service:
+    container_name: user-service
+    build: ./user-service
     ports:
-      - "50052:50052"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017
-      - USER_SERVICE_ADDR=user-service:50051
-    depends_on:
-      - mongo
-      - user-service
+      - "50050:50050"
+    env_file:
+      - ./user-service/.env

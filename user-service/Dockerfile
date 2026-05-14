@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26.2-alpine AS builder
 
 
 RUN apk add --no-cache git ca-certificates
@@ -16,5 +16,5 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/main .
-EXPOSE 50051
+EXPOSE 50050
 CMD ["./main"]
