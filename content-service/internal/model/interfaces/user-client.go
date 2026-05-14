@@ -3,5 +3,5 @@ package interfaces
 import "context"
 
 type UserServiceClient interface {
-	UserExists(ctx context.Context, userID string) (bool, error)
+	UserExists(ctx context.Context, userId string) (bool, error)
 }
