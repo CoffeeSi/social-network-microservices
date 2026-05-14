@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type RegisterRequest struct {
 	FirstName string
 	LastName  string
@@ -18,9 +20,10 @@ type RefreshTokenRequest struct {
 }
 
 type Auth struct {
+	ID        string
 	FirstName string
 	LastName  string
-	DOB       string
+	DOB       time.Time
 	Email     string
 	Password  string
 }

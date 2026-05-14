@@ -12,12 +12,13 @@ import (
 )
 
 type AuthUsecase struct {
-	publisher EventPublisherInterface
-	jwtToken  *utils.JwtToken
+	publisher  EventPublisherInterface
+	userClient UserClientInterface
+	jwtToken   *utils.JwtToken
 }
 
-func NewAuthUsecase(publisher EventPublisherInterface, jwtToken *utils.JwtToken) *AuthUsecase {
-	return &AuthUsecase{publisher: publisher, jwtToken: jwtToken}
+func NewAuthUsecase(publisher EventPublisherInterface, userClient UserClientInterface, jwtToken *utils.JwtToken) *AuthUsecase {
+	return &AuthUsecase{publisher: publisher, userClient: userClient, jwtToken: jwtToken}
 }
 
 func (uc *AuthUsecase) RegisterUser(ctx context.Context, req model.RegisterRequest) error {
@@ -39,14 +40,30 @@ func (uc *AuthUsecase) RegisterUser(ctx context.Context, req model.RegisterReque
 		return err
 	}
 
+	userDOB, err := utils.ParseDOB(req.DOB)
+	if err != nil {
+		return err
+	}
+
 	newAuth := model.Auth{
-		Email:    req.Email,
-		Password: hashedPassword,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		DOB:       userDOB,
+		Email:     req.Email,
+		Password:  hashedPassword,
+	}
+
+	err = uc.userClient.CreateUser(ctx, newAuth)
+	if err != nil {
+		return err
 	}
 
 	userRegisteredEvent := event.UserRegisteredEvent{
 		EventType:  event.UserRegisteredEventType,
 		OccurredAt: time.Now().Format(time.RFC3339),
+		FirstName:  newAuth.FirstName,
+		LastName:   newAuth.LastName,
+		DOB:        newAuth.DOB.Format("2006-01-02"),
 		Email:      newAuth.Email,
 		Password:   newAuth.Password,
 	}
@@ -66,16 +83,17 @@ func (uc *AuthUsecase) LoginUser(ctx context.Context, req model.LoginRequest) (s
 		return "", "", errors.New("invalid email")
 	}
 
-	// TODO: fetch user from DB by email and verify password with utils.CheckPassword
-	// Mocked userID for now
-	userID := "mock-user-id"
-
-	accessToken, err := uc.jwtToken.GenerateAccessToken(userID)
+	user, err := uc.userClient.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := uc.jwtToken.GenerateRefreshToken(userID)
+	accessToken, err := uc.jwtToken.GenerateAccessToken(user.ID)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := uc.jwtToken.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return "", "", err
 	}
