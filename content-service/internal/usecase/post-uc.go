@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -13,14 +14,20 @@ import (
 )
 
 type PostUseCase struct {
-	postRepo   repos.PostRepository
-	userClient interfaces.UserServiceClient
+	postRepo       repos.PostRepository
+	userClient     interfaces.UserServiceClient
+	eventPublisher repos.PostEventPublisher
 }
 
-func NewPostUseCase(repo repos.PostRepository, userClient interfaces.UserServiceClient) *PostUseCase {
+func NewPostUseCase(
+	repo repos.PostRepository,
+	userClient interfaces.UserServiceClient,
+	eventPublisher repos.PostEventPublisher,
+) *PostUseCase {
 	return &PostUseCase{
-		postRepo:   repo,
-		userClient: userClient,
+		postRepo:       repo,
+		userClient:     userClient,
+		eventPublisher: eventPublisher,
 	}
 }
 
@@ -52,7 +59,17 @@ func (uc *PostUseCase) CreatePost(ctx context.Context, input dto.CreatePostDTO) 
 		CreatedAt:    time.Now().UTC(),
 		UpdatedAt:    time.Now().UTC(),
 	}
-	return uc.postRepo.CreatePost(ctx, postModel)
+	savedPost, err := uc.postRepo.CreatePost(ctx, postModel)
+	if err != nil {
+		return model.Post{}, err
+	}
+	go func() {
+		if err := uc.eventPublisher.PublishPostCreated(context.Background(), savedPost); err != nil {
+			log.Printf("NATS Error: %v", err)
+		}
+	}()
+
+	return savedPost, nil
 }
 
 func (uc *PostUseCase) GetPostByID(ctx context.Context, id string) (model.Post, error) {
