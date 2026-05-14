@@ -3,9 +3,10 @@ package config
 import "os"
 
 type Config struct {
-	GRPCPort  string
-	NatsURL   string
-	SecretKey string
+	GRPCPort    string
+	NatsURL     string
+	SecretKey   string
+	UserGRPCUrl string
 }
 
 func NewConfig() *Config {
@@ -21,9 +22,14 @@ func NewConfig() *Config {
 	if secretKey == "" {
 		secretKey = "secret-key"
 	}
+	userGRPCUrl := os.Getenv("USER_GRPC_URL")
+	if userGRPCUrl == "" {
+		userGRPCUrl = "localhost:50052"
+	}
 	return &Config{
-		GRPCPort:  port,
-		NatsURL:   natsURL,
-		SecretKey: secretKey,
+		GRPCPort:    port,
+		NatsURL:     natsURL,
+		SecretKey:   secretKey,
+		UserGRPCUrl: userGRPCUrl,
 	}
 }

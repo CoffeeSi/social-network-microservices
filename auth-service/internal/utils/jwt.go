@@ -46,13 +46,14 @@ func (t *JwtToken) GenerateRefreshToken(userID string) (string, error) {
 }
 
 func (t *JwtToken) VerifyToken(tokenString string) (string, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{},
+	token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{},
 		func(token *jwt.Token) (any, error) {
 			return t.secretKey, nil
 		})
 	if err != nil {
 		return "", err
 	}
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
 		return "", errors.New("invalid token")

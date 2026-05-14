@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 
 	"github.com/CoffeeSi/social-network-microservices/auth-service/internal/model"
 	pb_user "github.com/CoffeeSi/social-network-microservices/auth-service/proto/user"
@@ -27,9 +28,12 @@ func (c *UserClient) CreateUser(ctx context.Context, req model.Auth) error {
 		Email:     req.Email,
 		Password:  req.Password,
 	}
-	_, err := c.pbUserClient.CreateUser(ctx, &user)
+	createUserResponse, err := c.pbUserClient.CreateUser(ctx, &user)
 	if err != nil {
 		return err
+	}
+	if createUserResponse.GetId() == "" {
+		return errors.New("user not created")
 	}
 	return nil
 }
