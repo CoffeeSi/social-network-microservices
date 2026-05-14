@@ -12,6 +12,11 @@ type AuthUsecaseInterface interface {
 	RefreshToken(ctx context.Context, req model.RefreshTokenRequest) (string, error)
 }
 
+type UserClientInterface interface {
+	CreateUser(ctx context.Context, req model.Auth) error
+	GetUserByEmail(ctx context.Context, email string) (model.Auth, error)
+}
+
 type EventPublisherInterface interface {
 	Publish(subject string, payload any) error
 }
