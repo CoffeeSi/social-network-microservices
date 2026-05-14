@@ -26,6 +26,7 @@ type UserUseCase interface {
 
 type UserHandler struct {
 	usecase UserUseCase
+	pb.UnimplementedUserServiceServer
 }
 
 func NewUserHandler(usecase UserUseCase) *UserHandler {
