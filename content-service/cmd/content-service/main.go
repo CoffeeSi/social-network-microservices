@@ -3,80 +3,52 @@ package main
 import (
 	"context"
 	"log"
-	"net"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
+	"github.com/CoffeeSi/social-network-microservices/content-service/internal/cache"
+	"github.com/CoffeeSi/social-network-microservices/content-service/internal/events"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/repository"
-	"github.com/CoffeeSi/social-network-microservices/content-service/internal/transport"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/usecase"
-	pb "github.com/CoffeeSi/social-network-microservices/content-service/proto"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/nats-io/nats.go"
+	"github.com/redis/go-redis/v9"
 )
 
-type MockUserServiceClient struct{}
-
-func (m *MockUserServiceClient) UserExists(ctx context.Context, userID string) (bool, error) {
-	return true, nil
-}
-
 func main() {
-	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 
-	mongoURI := "mongodb://localhost:27017"
-	log.Printf("Connecting to MongoDB at %s...", mongoURI)
+	// 1. Initialize MongoDB (The "Raw" Repository)
+	mongoClient := initMongoClient() // Your helper function
+	db := mongoClient.Database("content_db")
+	rawRepo := mongodb.NewPostRepository(db)
 
-	client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	// 2. Initialize Redis (The Cache Layer)
+	rdb := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_ADDR"),
+	})
+	// Check connection
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
-	defer func() {
-		if err := client.Disconnect(context.Background()); err != nil {
-			log.Printf("Error disconnecting MongoDB: %v", err)
-		}
-	}()
+	postCache := cache.NewRedisPostCache(rdb)
 
-	db := client.Database("social_network_content_test")
+	// 3. Initialize the Proxy (The "Magic" Layer)
+	// This wraps the rawRepo with caching logic
+	proxyRepo := repository.NewCachedPostRepository(rawRepo, postCache)
 
-	log.Println("Initializing repositories and usecases...")
-	postRepo := repository.NewPostRepo(db.Collection("posts"))
-	commentRepo := repository.NewCommentRepo(db.Collection("comments"))
-
-	mockUserClient := &MockUserServiceClient{}
-
-	postUC := usecase.NewPostUseCase(postRepo, mockUserClient)
-	commentUC := usecase.NewCommentUseCase(commentRepo, postRepo, mockUserClient)
-
-	handler := transport.NewContentHandler(postUC, commentUC, nil)
-
-	lis, err := net.Listen("tcp", ":50051")
+	// 4. Initialize NATS (The Event Layer)
+	nc, err := nats.Connect(os.Getenv("NATS_URL"))
 	if err != nil {
-		log.Fatalf("Failed to listen on port 50051: %v", err)
+		log.Fatalf("Failed to connect to NATS: %v", err)
 	}
+	defer nc.Close()
+	postPublisher := event.NewPostPublisher(nc)
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterContentServiceServer(grpcServer, handler)
+	// 5. Initialize gRPC Clients (e.g., User Service)
+	userClient := initUserServiceClient() // Your helper function
 
-	reflection.Register(grpcServer)
+	// 6. Initialize UseCase with the PROXY and PUBLISHER
+	postUC := usecase.NewPostUseCase(proxyRepo, userClient, postPublisher)
 
-	go func() {
-		log.Printf("Content Service is running on gRPC port :50051")
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve gRPC: %v", err)
-		}
-	}()
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
-
-	log.Println("Shutting down gRPC server gracefully...")
-	grpcServer.GracefulStop()
-	log.Println("Server stopped.")
+	// 7. Start the Server (gRPC or HTTP)
+	// startServer(postUC)
 }
