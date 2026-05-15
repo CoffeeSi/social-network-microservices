@@ -3,32 +3,43 @@ package config
 import "os"
 
 type Config struct {
-	AuthGRPCPort string
-	NatsURL      string
+	ChatGRPCPort string
+	MongoURI     string
+	MongoName    string
 	SecretKey    string
 	UserGRPCUrl  string
 }
 
 func NewConfig() *Config {
-	port := os.Getenv("AUTH_GRPC_PORT")
+	port := os.Getenv("CHAT_GRPC_PORT")
 	if port == "" {
-		port = "50051"
+		port = "50053"
 	}
-	natsURL := os.Getenv("NATS_URL")
-	if natsURL == "" {
-		natsURL = "nats://localhost:4222"
+
+	mongoURI := os.Getenv("CHAT_MONGO_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017"
 	}
+
+	mongoName := os.Getenv("CHAT_MONGO_NAME")
+	if mongoName == "" {
+		mongoName = "social_network"
+	}
+
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
 		secretKey = "secret-key"
 	}
+
 	userGRPCUrl := os.Getenv("USER_GRPC_URL")
 	if userGRPCUrl == "" {
 		userGRPCUrl = "localhost:50052"
 	}
+
 	return &Config{
-		AuthGRPCPort: port,
-		NatsURL:      natsURL,
+		ChatGRPCPort: port,
+		MongoURI:     mongoURI,
+		MongoName:    mongoName,
 		SecretKey:    secretKey,
 		UserGRPCUrl:  userGRPCUrl,
 	}

@@ -7,18 +7,7 @@ services:
   nats:
     container_name: nats
     image: nats:2.14.0-alpine3.22
-  auth-service:
-    container_name: auth-service
-    build: ./auth-service
-    ports:
-      - "50051:50051"
-    depends_on:
-      - nats
-    environment:
-      - NATS_URL=nats://nats:4222
-      - GRPC_PORT=50051
-      - USER_GRPC_URL=user-service:50052
-      - SECRET_KEY=secret-key
+
   user-service:
     container_name: user-service
     build: ./user-service
@@ -26,6 +15,27 @@ services:
       - "50050:50050"
     env_file:
       - ./user-service/.env
+
+  auth-service:
+    container_name: auth-service
+    build: ./auth-service
+    ports:
+      - "${AUTH_GRPC_PORT:-50051}:${AUTH_GRPC_PORT:-50051}"
+    depends_on:
+      - nats
+    env_file:
+      - ./auth-service/.env
+
+  chat-service:
+    container_name: chat-service
+    build: ./chat-service
+    ports:
+      - "${CHAT_GRPC_PORT:-50053}:${CHAT_GRPC_PORT:-50053}"
+    depends_on:
+      - nats
+    env_file:
+      - ./chat-service/.env
+
   content-service:
     container_name: content-service
     build: ./content-service
@@ -34,8 +44,6 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017
       - USER_SERVICE_ADDR=user-service:50050
-      - REDIS_ADDR=redis:6379
-      - NATS_URL=nats://4222
     depends_on:
       - mongo
       - user-service
