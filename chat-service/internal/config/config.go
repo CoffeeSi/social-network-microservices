@@ -3,25 +3,25 @@ package config
 import "os"
 
 type Config struct {
-	GRPCPort    string
-	MongoURI    string
-	MongoName   string
-	SecretKey   string
-	UserGRPCUrl string
+	ChatGRPCPort string
+	MongoURI     string
+	MongoName    string
+	SecretKey    string
+	UserGRPCUrl  string
 }
 
 func NewConfig() *Config {
-	port := os.Getenv("GRPC_PORT")
+	port := os.Getenv("CHAT_GRPC_PORT")
 	if port == "" {
 		port = "50053"
 	}
 
-	mongoURI := os.Getenv("MONGO_URI")
+	mongoURI := os.Getenv("CHAT_MONGO_URI")
 	if mongoURI == "" {
 		mongoURI = "mongodb://localhost:27017"
 	}
 
-	mongoName := os.Getenv("MONGO_NAME")
+	mongoName := os.Getenv("CHAT_MONGO_NAME")
 	if mongoName == "" {
 		mongoName = "social_network"
 	}
@@ -37,10 +37,10 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		GRPCPort:    port,
-		MongoURI:    mongoURI,
-		MongoName:   mongoName,
-		SecretKey:   secretKey,
-		UserGRPCUrl: userGRPCUrl,
+		ChatGRPCPort: port,
+		MongoURI:     mongoURI,
+		MongoName:    mongoName,
+		SecretKey:    secretKey,
+		UserGRPCUrl:  userGRPCUrl,
 	}
 }

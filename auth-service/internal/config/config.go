@@ -3,14 +3,14 @@ package config
 import "os"
 
 type Config struct {
-	GRPCPort    string
-	NatsURL     string
-	SecretKey   string
-	UserGRPCUrl string
+	AuthGRPCPort string
+	NatsURL      string
+	SecretKey    string
+	UserGRPCUrl  string
 }
 
 func NewConfig() *Config {
-	port := os.Getenv("GRPC_PORT")
+	port := os.Getenv("AUTH_GRPC_PORT")
 	if port == "" {
 		port = "50051"
 	}
@@ -27,9 +27,9 @@ func NewConfig() *Config {
 		userGRPCUrl = "localhost:50052"
 	}
 	return &Config{
-		GRPCPort:    port,
-		NatsURL:     natsURL,
-		SecretKey:   secretKey,
-		UserGRPCUrl: userGRPCUrl,
+		AuthGRPCPort: port,
+		NatsURL:      natsURL,
+		SecretKey:    secretKey,
+		UserGRPCUrl:  userGRPCUrl,
 	}
 }

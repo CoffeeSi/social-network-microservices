@@ -18,7 +18,7 @@ import (
 func Run() error {
 	ctx := context.Background()
 	cfg := config.NewConfig()
-	listener, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+	listener, err := net.Listen("tcp", ":"+cfg.ChatGRPCPort)
 	if err != nil {
 		return err
 	}
