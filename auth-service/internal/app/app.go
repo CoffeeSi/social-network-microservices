@@ -16,7 +16,7 @@ import (
 
 func Run() error {
 	cfg := config.NewConfig()
-	listener, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+	listener, err := net.Listen("tcp", ":"+cfg.AuthGRPCPort)
 	if err != nil {
 		return err
 	}
