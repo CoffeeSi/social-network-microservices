@@ -12,11 +12,24 @@ services:
     container_name: auth-service
     build: ./auth-service
     ports:
-      - "50051:50051"
+      - "${AUTH_GRPC_PORT:-50051}:${AUTH_GRPC_PORT:-50051}"
     depends_on:
       - nats
     environment:
-      - NATS_URL=nats://nats:4222
-      - GRPC_PORT=50051
-      - USER_GRPC_URL=user-service:50052
-      - SECRET_KEY=secret-key
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
+      - AUTH_GRPC_PORT=${AUTH_GRPC_PORT:-50051}
+      - USER_GRPC_URL=${USER_GRPC_URL:-user-service:50052}
+      - SECRET_KEY=${SECRET_KEY:-secret-key}
+  chat-service:
+    container_name: chat-service
+    build: ./chat-service
+    ports:
+      - "${CHAT_GRPC_PORT:-50053}:${CHAT_GRPC_PORT:-50053}"
+    depends_on:
+      - nats
+    environment:
+      - CHAT_GRPC_PORT=${CHAT_GRPC_PORT:-50053}
+      - USER_GRPC_URL=${USER_GRPC_URL:-user-service:50052}
+      - CHAT_MONGO_URI=${CHAT_MONGO_URI:-mongodb://mongo:27017}
+      - CHAT_MONGO_NAME=${CHAT_MONGO_NAME:-chat-service}
+      - SECRET_KEY=${SECRET_KEY:-secret-key}
