@@ -2,8 +2,7 @@ services:
   mongo:
     image: mongo:latest
     container_name: mongo
-    ports:
-      - "27017:27017"
+
   nats:
     container_name: nats
     image: nats:2.14.0-alpine3.22
@@ -13,8 +12,11 @@ services:
     build: ./user-service
     ports:
       - "50050:50050"
-    env_file:
-      - ./user-service/.env
+    environment:
+      - PORT=:50050
+      - MONGO_URI=mongodb://mongo:27017
+    depends_on:
+      - mongo
 
   auth-service:
     container_name: auth-service
@@ -23,8 +25,11 @@ services:
       - "${AUTH_GRPC_PORT:-50051}:${AUTH_GRPC_PORT:-50051}"
     depends_on:
       - nats
+      - user-service
     env_file:
       - ./auth-service/.env
+    environment:
+      - USER_GRPC_URL=user-service:50050
 
   chat-service:
     container_name: chat-service
@@ -33,17 +38,38 @@ services:
       - "${CHAT_GRPC_PORT:-50053}:${CHAT_GRPC_PORT:-50053}"
     depends_on:
       - nats
-    env_file:
-      - ./chat-service/.env
-
-  content-service:
-    container_name: content-service
-    build: ./content-service
-    ports:
-      - "50052:50052"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017
-      - USER_SERVICE_ADDR=user-service:50050
-    depends_on:
       - mongo
       - user-service
+    env_file:
+      - ./chat-service/.env
+    environment:
+      - USER_GRPC_URL=user-service:50050
+      - CHAT_MONGO_URI=mongodb://mongo:27017
+
+  # content-service:
+  #   container_name: content-service
+  #   build: ./content-service
+  #   ports:
+  #     - "50052:50052"
+  #   environment:
+  #     - MONGO_URI=mongodb://mongo:27017
+  #     - USER_SERVICE_ADDR=user-service:50050
+  #     - CONTENT_GRPC_PORT=50052
+  #     - NATS_URL=nats://nats:4222
+  #   depends_on:
+  #     - mongo
+  #     - nats
+  #     - user-service
+
+  api-gateway:
+    container_name: api-gateway
+    build: ./api-gateway
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:${API_GATEWAY_PORT:-8080}"
+    env_file:
+      - ./api-gateway/.env
+    depends_on:
+      - auth-service
+      - user-service
+      # - content-service
+      - chat-service
