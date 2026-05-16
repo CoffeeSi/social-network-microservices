@@ -46,20 +46,24 @@ services:
       - USER_GRPC_URL=user-service:50050
       - CHAT_MONGO_URI=mongodb://mongo:27017
 
-  # content-service:
-  #   container_name: content-service
-  #   build: ./content-service
-  #   ports:
-  #     - "50052:50052"
-  #   environment:
-  #     - MONGO_URI=mongodb://mongo:27017
-  #     - USER_SERVICE_ADDR=user-service:50050
-  #     - CONTENT_GRPC_PORT=50052
-  #     - NATS_URL=nats://nats:4222
-  #   depends_on:
-  #     - mongo
-  #     - nats
-  #     - user-service
+  content-service:
+    container_name: content-service
+    build:
+      context: ./content-service
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052"
+    environment:
+      - GRPC_PORT=50052
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=maxat_content_db
+      - REDIS_ADDR=redis:6379
+      - USER_SERVICE_URL=user-service:50050
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - mongo
+      - nats
+      - user-service
 
   api-gateway:
     container_name: api-gateway
@@ -71,5 +75,5 @@ services:
     depends_on:
       - auth-service
       - user-service
-      # - content-service
+      - content-service
       - chat-service

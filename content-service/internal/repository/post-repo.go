@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/repository/dao"
@@ -207,7 +208,7 @@ func (pr *PostRepo) UpdatePost(ctx context.Context, id string, content string, m
 		"$set": bson.M{
 			"content":    content,
 			"media_urls": mediaURLs,
-			"updated_at": bson.M{"$literal": "NOW"},
+			"updated_at": time.Now(),
 		},
 	}
 

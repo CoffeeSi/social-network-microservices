@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 
-	userpb "github.com/CoffeeSi/social-network-microservices/user-service/proto"
+	userpb "github.com/IsFariza/maxat-protobuf/user-service-pb"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

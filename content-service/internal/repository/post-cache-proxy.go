@@ -10,10 +10,10 @@ import (
 
 type cachedPostRepository struct {
 	rawRepo repos.PostRepository
-	cache   cache.RedisPostCache
+	cache   *cache.RedisPostCache
 }
 
-func NewCachedPostRepository(raw repos.PostRepository, cache cache.RedisPostCache) repos.PostRepository {
+func NewCachedPostRepository(raw repos.PostRepository, cache *cache.RedisPostCache) repos.PostRepository {
 	return &cachedPostRepository{
 		rawRepo: raw,
 		cache:   cache,
