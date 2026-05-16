@@ -8,7 +8,6 @@ import (
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/repository/dao"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type LikeRepo struct {
@@ -16,13 +15,6 @@ type LikeRepo struct {
 }
 
 func NewLikeRepo(col *mongo.Collection) *LikeRepo {
-	col.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "post_id", Value: 1},
-			{Key: "user_id", Value: 1},
-		},
-		Options: options.Index().SetUnique(true),
-	})
 	return &LikeRepo{col: col}
 }
 

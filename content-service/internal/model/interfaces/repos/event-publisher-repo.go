@@ -8,4 +8,6 @@ import (
 
 type PostEventPublisher interface {
 	PublishPostCreated(ctx context.Context, post model.Post) error
+	PublishPostUpdated(ctx context.Context, post model.Post) error
+	PublishPostDeleted(ctx context.Context, post model.Post) error
 }

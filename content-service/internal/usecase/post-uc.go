@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"log"
 	"strings"
 	"time"
@@ -44,10 +43,10 @@ func (uc *PostUseCase) CreatePost(ctx context.Context, input dto.CreatePostDTO) 
 
 	exists, err := uc.userClient.UserExists(ctx, aID)
 	if err != nil {
-		return model.Post{}, errors.New("failed to verify author profile availablity")
+		return model.Post{}, err
 	}
 	if !exists {
-		return model.Post{}, errors.New("cannot post: profile does not exist")
+		return model.Post{}, model.ErrPostNotFound
 	}
 
 	postModel := model.Post{
@@ -118,7 +117,15 @@ func (uc *PostUseCase) DeletePost(ctx context.Context, id, requestorID string) e
 	if post.AuthorID != requestorID {
 		return model.ErrPermissionDenied
 	}
-	return uc.postRepo.DeletePost(ctx, id)
+	if err := uc.postRepo.DeletePost(ctx, id); err != nil {
+		return err
+	}
+	go func() {
+		if err := uc.eventPublisher.PublishPostDeleted(context.Background(), post); err != nil {
+			log.Printf("NATS Error: %v", err)
+		}
+	}()
+	return nil
 }
 
 func (uc *PostUseCase) UpdatePost(ctx context.Context, id, requestorID, content string, mediaURLs []string) (model.Post, error) {
@@ -143,5 +150,14 @@ func (uc *PostUseCase) UpdatePost(ctx context.Context, id, requestorID, content 
 		return model.Post{}, model.ErrPermissionDenied
 	}
 
-	return uc.postRepo.UpdatePost(ctx, id, content, mediaURLs)
+	updated, err := uc.postRepo.UpdatePost(ctx, id, content, mediaURLs)
+	if err != nil {
+		return model.Post{}, err
+	}
+	go func() {
+		if err := uc.eventPublisher.PublishPostUpdated(context.Background(), updated); err != nil {
+			log.Printf("NATS Error: %v", err)
+		}
+	}()
+	return updated, nil
 }

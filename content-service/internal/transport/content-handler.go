@@ -39,10 +39,16 @@ func (ch *ContentHandler) CreatePost(ctx context.Context, req *pb.CreatePostRequ
 		MediaURLs: req.MediaUrls,
 	})
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
 		if errors.Is(err, model.ErrEmptyPost) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		log.Printf("[gRPC Error Trace] CreatePost failed with internal error: %v", err)
+		if errors.Is(err, model.ErrPostNotFound) {
+			return nil, status.Error(codes.NotFound, "author profile does not exist")
+		}
+		log.Printf("[gRPC Error Trace] CreatePost failed: %v", err)
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	return postToProto(&res), nil
@@ -78,6 +84,12 @@ func (ch *ContentHandler) ListPosts(ctx context.Context, req *pb.ListPostsReques
 	}
 
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		if errors.Is(err, model.ErrPostNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -103,6 +115,10 @@ func (ch *ContentHandler) DeletePost(ctx context.Context, req *pb.DeletePostRequ
 		if errors.Is(err, model.ErrPermissionDenied) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
+		if errors.Is(err, model.ErrPostNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		log.Printf("[gRPC Error Trace] DeleteComment failed: %v", err)
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	return &emptypb.Empty{}, nil
@@ -123,6 +139,7 @@ func (ch *ContentHandler) UpdatePost(ctx context.Context, req *pb.UpdatePostRequ
 		if errors.Is(err, model.ErrPermissionDenied) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
+		log.Printf("[gRPC Error Trace] UpdateComment failed: %v", err)
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
@@ -136,6 +153,9 @@ func (ch *ContentHandler) CreateComment(ctx context.Context, req *pb.CreateComme
 		Text:   req.Text,
 	})
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
 		if errors.Is(err, model.ErrEmptyComment) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
@@ -191,33 +211,32 @@ func (ch *ContentHandler) DeleteComment(ctx context.Context, req *pb.DeleteComme
 	return &emptypb.Empty{}, nil
 }
 
+func (ch *ContentHandler) UpdateComment(ctx context.Context, req *pb.UpdateCommentRequest) (*pb.Comment, error) {
+	res, err := ch.commentUC.UpdateComment(ctx, req.Id, req.UserId, req.Text)
+	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		if errors.Is(err, model.ErrEmptyComment) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		if errors.Is(err, model.ErrCommentNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		if errors.Is(err, model.ErrPermissionDenied) {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return commentToProto(&res), nil
+}
+
 func (ch *ContentHandler) ToggleLike(ctx context.Context, req *pb.ToggleLikeRequest) (*pb.LikeResponse, error) {
-	err := ch.likeUC.LikePost(ctx, req.PostId, req.UserId)
-
+	count, liked, err := ch.likeUC.ToggleLike(ctx, req.PostId, req.UserId)
 	if err == nil {
-		post, fetchErr := ch.postUC.GetPostByID(ctx, req.PostId)
-		if fetchErr != nil {
-			return nil, status.Error(codes.Internal, "like completed but status sync failed")
-		}
-		return &pb.LikeResponse{NewLikeCount: post.LikeCount, IsLiked: true}, nil
+		return &pb.LikeResponse{NewLikeCount: count, IsLiked: liked}, nil
 	}
-
-	if errors.Is(err, model.ErrAlreadyLiked) {
-		err = ch.likeUC.UnlikePost(ctx, req.PostId, req.UserId)
-		if err != nil {
-			if errors.Is(err, model.ErrLikeNotFound) {
-				return nil, status.Error(codes.NotFound, err.Error())
-			}
-			return nil, status.Error(codes.Internal, "internal server error")
-		}
-
-		post, fetchErr := ch.postUC.GetPostByID(ctx, req.PostId)
-		if fetchErr != nil {
-			return nil, status.Error(codes.Internal, "unlike completed but status sync failed")
-		}
-		return &pb.LikeResponse{NewLikeCount: post.LikeCount, IsLiked: false}, nil
-	}
-
 	if errors.Is(err, model.ErrPostNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -226,4 +245,48 @@ func (ch *ContentHandler) ToggleLike(ctx context.Context, req *pb.ToggleLikeRequ
 	}
 
 	return nil, status.Error(codes.Internal, "internal server error")
+}
+
+func (ch *ContentHandler) GetMyPosts(ctx context.Context, req *pb.GetMyPostsRequest) (*pb.ListPostsResponse, error) {
+	posts, total, err := ch.postUC.GetUserPosts(ctx, req.UserId, dto.GetFeedDTO{
+		PageSize: req.PageSize,
+		Page:     req.Page,
+	})
+	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		if errors.Is(err, model.ErrPostNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	pbPosts := make([]*pb.Post, 0, len(posts))
+	for _, p := range posts {
+		pbPosts = append(pbPosts, postToProto(&p))
+	}
+
+	return &pb.ListPostsResponse{
+		Posts:      pbPosts,
+		TotalCount: total,
+	}, nil
+}
+
+func (ch *ContentHandler) GetPostStats(ctx context.Context, req *pb.GetPostStatsRequest) (*pb.PostStatsResponse, error) {
+	post, err := ch.postUC.GetPostByID(ctx, req.PostId)
+	if err != nil {
+		if errors.Is(err, model.ErrInvalidID) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		if errors.Is(err, model.ErrPostNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	return &pb.PostStatsResponse{
+		PostId:       post.ID,
+		LikeCount:    post.LikeCount,
+		CommentCount: post.CommentCount,
+	}, nil
 }

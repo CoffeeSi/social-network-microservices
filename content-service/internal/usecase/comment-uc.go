@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
@@ -30,6 +31,10 @@ func NewCommentUseCase(
 }
 
 func (uc *CommentUseCase) AddComment(ctx context.Context, input dto.CreateCommentDTO) (model.Comment, error) {
+	input.PostID = strings.TrimSpace(input.PostID)
+	input.UserID = strings.TrimSpace(input.UserID)
+	input.Text = strings.TrimSpace(input.Text)
+
 	if input.Text == "" {
 		return model.Comment{}, model.ErrEmptyComment
 	}
@@ -45,42 +50,33 @@ func (uc *CommentUseCase) AddComment(ctx context.Context, input dto.CreateCommen
 		return model.Comment{}, model.ErrInvalidID
 	}
 
-	var createdComment model.Comment
-
-	err = uc.postRepo.WithTransaction(ctx, func(txCtx context.Context) error {
-		_, err := uc.postRepo.GetPost(txCtx, input.PostID)
-		if err != nil {
-			return model.ErrPostNotFound
-		}
-
-		comment := model.Comment{
-			PostID:    input.PostID,
-			UserID:    input.UserID,
-			Text:      input.Text,
-			CreatedAt: time.Now().UTC(),
-			UpdatedAt: time.Now().UTC(),
-		}
-
-		createdComment, err = uc.commentRepo.CreateComment(txCtx, comment)
-		if err != nil {
-			return fmt.Errorf("failed to save comment document: %w", err)
-		}
-
-		err = uc.postRepo.IncrementCommentCount(txCtx, input.PostID, 1)
-		if err != nil {
-			return fmt.Errorf("failed to increment post comment counter: %w", err)
-		}
-
-		return nil
-	})
+	_, err = uc.postRepo.GetPost(ctx, input.PostID)
 	if err != nil {
 		return model.Comment{}, err
+	}
+
+	comment := model.Comment{
+		PostID:    input.PostID,
+		UserID:    input.UserID,
+		Text:      input.Text,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	createdComment, err := uc.commentRepo.CreateComment(ctx, comment)
+	if err != nil {
+		return model.Comment{}, fmt.Errorf("failed to save comment document: %w", err)
+	}
+
+	if err := uc.postRepo.IncrementCommentCount(ctx, input.PostID, 1); err != nil {
+		return model.Comment{}, fmt.Errorf("failed to increment post comment counter: %w", err)
 	}
 
 	return createdComment, nil
 }
 
 func (uc *CommentUseCase) ListComments(ctx context.Context, input dto.ListCommentsDTO) ([]model.Comment, int32, error) {
+	input.PostID = strings.TrimSpace(input.PostID)
 	if input.PostID == "" {
 		return nil, 0, model.ErrInvalidID
 	}
@@ -101,9 +97,15 @@ func (uc *CommentUseCase) ListComments(ctx context.Context, input dto.ListCommen
 }
 
 func (uc *CommentUseCase) UpdateComment(ctx context.Context, commentID, requestorID, newText string) (model.Comment, error) {
+	commentID = strings.TrimSpace(commentID)
+	requestorID = strings.TrimSpace(requestorID)
+	newText = strings.TrimSpace(newText)
 
 	if newText == "" {
 		return model.Comment{}, model.ErrEmptyComment
+	}
+	if commentID == "" || requestorID == "" {
+		return model.Comment{}, model.ErrInvalidID
 	}
 
 	existingComment, err := uc.commentRepo.GetComment(ctx, commentID)
@@ -119,26 +121,25 @@ func (uc *CommentUseCase) UpdateComment(ctx context.Context, commentID, requesto
 }
 
 func (uc *CommentUseCase) DeleteComment(ctx context.Context, commentID, requestorID string) error {
+	commentID = strings.TrimSpace(commentID)
+	requestorID = strings.TrimSpace(requestorID)
 	if commentID == "" || requestorID == "" {
 		return model.ErrInvalidID
 	}
-	return uc.postRepo.WithTransaction(ctx, func(txCtx context.Context) error {
-		comment, err := uc.commentRepo.GetComment(txCtx, commentID)
-		if err != nil {
-			return err
-		}
-		if comment.UserID != requestorID {
-			return model.ErrPermissionDenied
-		}
 
-		err = uc.commentRepo.DeleteComment(txCtx, commentID)
-		if err != nil {
-			return fmt.Errorf("failed to delete comment entry: %w", err)
-		}
-		err = uc.postRepo.IncrementCommentCount(txCtx, comment.PostID, -1)
-		if err != nil {
-			return fmt.Errorf("failed to decrement post comment counter: %w", err)
-		}
-		return nil
-	})
+	comment, err := uc.commentRepo.GetComment(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment.UserID != requestorID {
+		return model.ErrPermissionDenied
+	}
+
+	if err := uc.commentRepo.DeleteComment(ctx, commentID); err != nil {
+		return fmt.Errorf("failed to delete comment entry: %w", err)
+	}
+	if err := uc.postRepo.IncrementCommentCount(ctx, comment.PostID, -1); err != nil {
+		return fmt.Errorf("failed to decrement post comment counter: %w", err)
+	}
+	return nil
 }

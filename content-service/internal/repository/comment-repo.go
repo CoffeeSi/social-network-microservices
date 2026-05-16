@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/repository/dao"
@@ -17,12 +18,6 @@ type CommentRepo struct {
 }
 
 func NewCommentRepo(col *mongo.Collection) *CommentRepo {
-	col.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "post_id", Value: 1},
-			{Key: "created_at", Value: 1},
-		},
-	})
 	return &CommentRepo{col: col}
 }
 
@@ -134,7 +129,7 @@ func (r *CommentRepo) UpdateComment(ctx context.Context, id string, text string)
 	update := bson.M{
 		"$set": bson.M{
 			"text":       text,
-			"updated_at": bson.M{"$literal": "NOW"},
+			"updated_at": time.Now().UTC(),
 		},
 	}
 

@@ -11,7 +11,7 @@ type Config struct {
 func LoadConfig() Config {
 	return Config{
 		GRPCPort: getEnv("GRPC_PORT", "50053"),
-		MongoURI: getEnv("MONGO_URI", "mongo://localhost:27017"),
+		MongoURI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		DBName:   getEnv("DB_NAME", "maxat_content_db"),
 	}
 }

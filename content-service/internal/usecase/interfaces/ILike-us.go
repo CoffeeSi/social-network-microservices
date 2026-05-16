@@ -3,6 +3,6 @@ package interfaces
 import "context"
 
 type LikeUseCase interface {
-	LikePost(ctx context.Context, postID, userID string) error
-	UnlikePost(ctx context.Context, postID, userID string) error
+	ToggleLike(ctx context.Context, postID, userID string) (int32, bool, error)
+	ProcessToggleLike(ctx context.Context, postID, userID string) (int32, bool, error)
 }

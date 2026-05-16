@@ -41,6 +41,7 @@ func (r *cachedPostRepository) CreatePost(ctx context.Context, post model.Post) 
 	if err != nil {
 		return model.Post{}, err
 	}
+	go r.cache.SetPost(context.Background(), saved)
 	go r.cache.InvalidateFeed(context.Background())
 	return saved, nil
 }
@@ -48,6 +49,7 @@ func (r *cachedPostRepository) DeletePost(ctx context.Context, id string) error 
 	if err := r.rawRepo.DeletePost(ctx, id); err != nil {
 		return err
 	}
+	go r.cache.InvalidatePost(context.Background(), id)
 	go r.cache.InvalidateFeed(context.Background())
 	return nil
 }
@@ -56,21 +58,39 @@ func (r *cachedPostRepository) UpdatePost(ctx context.Context, id string, conten
 	if err != nil {
 		return model.Post{}, err
 	}
+	go r.cache.SetPost(context.Background(), updated)
 	go r.cache.InvalidateFeed(context.Background())
 	return updated, nil
 }
 func (r *cachedPostRepository) GetPost(ctx context.Context, id string) (model.Post, error) {
-	return r.rawRepo.GetPost(ctx, id)
+	cached, _ := r.cache.GetPost(ctx, id)
+	if cached != nil {
+		return *cached, nil
+	}
+	post, err := r.rawRepo.GetPost(ctx, id)
+	if err != nil {
+		return model.Post{}, err
+	}
+	go r.cache.SetPost(context.Background(), post)
+	return post, nil
 }
 func (r *cachedPostRepository) GetUserPosts(ctx context.Context, id string, pageSize, page int32) ([]model.Post, int32, error) {
 	return r.rawRepo.GetUserPosts(ctx, id, pageSize, page)
 }
-func (r *cachedPostRepository) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
-	return r.rawRepo.WithTransaction(ctx, fn)
-}
+
 func (r *cachedPostRepository) IncrementCommentCount(ctx context.Context, postID string, amount int32) error {
-	return r.rawRepo.IncrementCommentCount(ctx, postID, amount)
+	if err := r.rawRepo.IncrementCommentCount(ctx, postID, amount); err != nil {
+		return err
+	}
+	go r.cache.InvalidatePost(context.Background(), postID)
+	go r.cache.InvalidateFeed(context.Background())
+	return nil
 }
 func (r *cachedPostRepository) IncrementLikeCount(ctx context.Context, postID string, amount int32) error {
-	return r.rawRepo.IncrementLikeCount(ctx, postID, amount)
+	if err := r.rawRepo.IncrementLikeCount(ctx, postID, amount); err != nil {
+		return err
+	}
+	go r.cache.InvalidatePost(context.Background(), postID)
+	go r.cache.InvalidateFeed(context.Background())
+	return nil
 }

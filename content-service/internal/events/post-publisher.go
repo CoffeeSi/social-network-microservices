@@ -18,6 +18,18 @@ func NewPostPublisher(nc *nats.Conn) repos.PostEventPublisher {
 	return &postPublisher{nc: nc}
 }
 func (p *postPublisher) PublishPostCreated(ctx context.Context, post model.Post) error {
+	return p.publishPostEvent("posts.created", post)
+}
+
+func (p *postPublisher) PublishPostUpdated(ctx context.Context, post model.Post) error {
+	return p.publishPostEvent("posts.updated", post)
+}
+
+func (p *postPublisher) PublishPostDeleted(ctx context.Context, post model.Post) error {
+	return p.publishPostEvent("posts.deleted", post)
+}
+
+func (p *postPublisher) publishPostEvent(eventType string, post model.Post) error {
 	payload := struct {
 		EventType  string `json:"event_type"`
 		OccurredAt string `json:"occurred_at"`
@@ -26,8 +38,8 @@ func (p *postPublisher) PublishPostCreated(ctx context.Context, post model.Post)
 		Content    string `json:"content"`
 		HasMedia   bool   `json:"has_media"`
 	}{
-		EventType:  "posts.created",
-		OccurredAt: time.Now().Format(time.RFC3339),
+		EventType:  eventType,
+		OccurredAt: time.Now().UTC().Format(time.RFC3339),
 		PostID:     post.ID,
 		AuthorID:   post.AuthorID,
 		Content:    post.Content,
@@ -39,5 +51,5 @@ func (p *postPublisher) PublishPostCreated(ctx context.Context, post model.Post)
 		return err
 	}
 
-	return p.nc.Publish("posts.created", data)
+	return p.nc.Publish(eventType, data)
 }

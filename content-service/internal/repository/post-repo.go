@@ -18,28 +18,9 @@ type PostRepo struct {
 }
 
 func NewPostRepo(col *mongo.Collection) *PostRepo {
-	col.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "author_id", Value: 1},
-			{Key: "created_at", Value: -1}},
-	})
-	col.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.D{{Key: "created_at", Value: -1}},
-	})
 	return &PostRepo{col: col}
 }
-func (pr *PostRepo) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
-	session, err := pr.col.Database().Client().StartSession()
-	if err != nil {
-		return err
-	}
-	defer session.EndSession(ctx)
 
-	_, err = session.WithTransaction(ctx, func(sessCtx context.Context) (interface{}, error) {
-		return nil, fn(sessCtx)
-	})
-	return err
-}
 func (r *PostRepo) CreatePost(ctx context.Context, post model.Post) (model.Post, error) {
 	postDao, err := dao.FromPostToDao(post)
 	if err != nil {
@@ -92,7 +73,7 @@ func (pr *PostRepo) GetUserPosts(ctx context.Context, authorID string, pageSize,
 		}}},
 	}
 
-	return pr.executeAggregationPipeline(ctx, pipeline, pageSize, page)
+	return pr.executeAggregationPipeline(ctx, pipeline)
 }
 func (pr *PostRepo) GetFeed(ctx context.Context, pageSize, page int32) ([]model.Post, int32, error) {
 
@@ -110,7 +91,7 @@ func (pr *PostRepo) GetFeed(ctx context.Context, pageSize, page int32) ([]model.
 			}},
 		}}},
 	}
-	return pr.executeAggregationPipeline(ctx, pipeline, pageSize, page)
+	return pr.executeAggregationPipeline(ctx, pipeline)
 }
 func (pr *PostRepo) DeletePost(ctx context.Context, id string) error {
 	objID, err := bson.ObjectIDFromHex(id)
@@ -128,7 +109,7 @@ func (pr *PostRepo) DeletePost(ctx context.Context, id string) error {
 	return nil
 }
 
-func (pr *PostRepo) executeAggregationPipeline(ctx context.Context, pipeline mongo.Pipeline, pageSize, page int32) ([]model.Post, int32, error) {
+func (pr *PostRepo) executeAggregationPipeline(ctx context.Context, pipeline mongo.Pipeline) ([]model.Post, int32, error) {
 	cursor, err := pr.col.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to aggregate posts: %w", err)
