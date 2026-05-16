@@ -54,5 +54,6 @@ func (c *UserClient) GetUserByEmail(ctx context.Context, email string) (model.Au
 		DOB:       user.Dob.AsTime(),
 		Email:     user.Email,
 		Password:  user.Password,
+		IsActive:  user.IsActive,
 	}, nil
 }

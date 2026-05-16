@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"net"
 
 	"github.com/CoffeeSi/social-network-microservices/auth-service/internal/client"
@@ -9,6 +10,7 @@ import (
 	grpc_handler "github.com/CoffeeSi/social-network-microservices/auth-service/internal/transport/grpc"
 	"github.com/CoffeeSi/social-network-microservices/auth-service/internal/usecase"
 	"github.com/CoffeeSi/social-network-microservices/auth-service/internal/utils"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -30,8 +32,13 @@ func Run() error {
 
 	publisher := event.NewPublisher(cfg.NatsURL)
 	jwtToken := utils.NewJWTToken(cfg.SecretKey)
-
-	uc := usecase.NewAuthUsecase(publisher, userClient, jwtToken)
+	opt, err := redis.ParseURL(cfg.REDIS)
+	if err != nil {
+		log.Printf("failed to parse redis url, using default: %v", err)
+		opt = &redis.Options{Addr: "localhost:6379"}
+	}
+	rdb := redis.NewClient(opt)
+	uc := usecase.NewAuthUsecase(publisher, userClient, jwtToken, rdb, cfg.TTL)
 
 	server := grpc.NewServer()
 	grpc_handler.NewAuthHandler(server, uc)

@@ -14,11 +14,8 @@ services:
       - "50051:50051"
     depends_on:
       - nats
-    environment:
-      - NATS_URL=nats://nats:4222
-      - GRPC_PORT=50051
-      - USER_GRPC_URL=user-service:50052
-      - SECRET_KEY=secret-key
+    env_file:
+      - ./auth-service/.env
   user-service:
     container_name: user-service
     build: ./user-service

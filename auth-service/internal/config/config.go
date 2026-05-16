@@ -1,12 +1,17 @@
 package config
 
-import "os"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
 	GRPCPort    string
 	NatsURL     string
 	SecretKey   string
 	UserGRPCUrl string
+	REDIS       string
+	TTL         time.Duration
 }
 
 func NewConfig() *Config {
@@ -26,10 +31,21 @@ func NewConfig() *Config {
 	if userGRPCUrl == "" {
 		userGRPCUrl = "localhost:50052"
 	}
+	REDIS := os.Getenv("REDIS")
+	if REDIS == "" {
+		REDIS = "redis://redis:6379"
+	}
+	TTL := os.Getenv("TTL")
+	if TTL == "" {
+		TTL = "10m"
+	}
+	duration, _ := time.ParseDuration(TTL)
 	return &Config{
 		GRPCPort:    port,
 		NatsURL:     natsURL,
 		SecretKey:   secretKey,
 		UserGRPCUrl: userGRPCUrl,
+		REDIS:       REDIS,
+		TTL:         duration,
 	}
 }

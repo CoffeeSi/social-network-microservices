@@ -203,3 +203,25 @@ func (ur *UserRepo) ChangePassword(ctx context.Context, id, newPassword string) 
 	}
 	return nil
 }
+
+func (ur *UserRepo) ChangeStatus(ctx context.Context, email string) error {
+	updateData := bson.M{"$set": bson.M{"is_active": true}}
+	filter := bson.M{"email": email}
+	resultDao := dao.UserDAO{}
+	opts := options.FindOneAndUpdate().
+		SetReturnDocument(options.After)
+	err := ur.col.FindOneAndUpdate(
+		ctx,
+		filter,
+		updateData,
+		opts,
+	).Decode(&resultDao)
+
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+	return nil
+}
