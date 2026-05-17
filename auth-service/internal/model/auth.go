@@ -26,4 +26,5 @@ type Auth struct {
 	DOB       time.Time
 	Email     string
 	Password  string
+	IsActive  bool
 }

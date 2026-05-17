@@ -1,7 +1,8 @@
 package event
 
 const (
-	UserRegisteredEventType = "user.registered"
+	UserRegisteredEventType   = "user.registered"
+	UserVerificationEventType = "user.verification"
 )
 
 type UserRegisteredEvent struct {
@@ -12,4 +13,10 @@ type UserRegisteredEvent struct {
 	DOB        string `json:"dob"`
 	Email      string `json:"email"`
 	Password   string `json:"password"`
+}
+type UserVerificationEvent struct {
+	EventType string `json:"event_type"`
+	OccuredAt string `json:"occured_at"`
+	Email     string `json:"email"`
+	Code      string `json:"code"`
 }

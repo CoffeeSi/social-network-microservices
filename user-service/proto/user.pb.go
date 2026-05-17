@@ -796,7 +796,7 @@ const file_proto_user_proto_rawDesc = "" +
 	"\vtotal_pages\x18\x04 \x01(\x05R\n" +
 	"totalPages\"-\n" +
 	"\x15GetUserByEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email2\xab\x03\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email2\xf0\x03\n" +
 	"\vUserService\x121\n" +
 	"\n" +
 	"CreateUser\x12\x17.user.CreateUserRequest\x1a\n" +
@@ -810,7 +810,8 @@ const file_proto_user_proto_rawDesc = "" +
 	"UpdateUser\x12\x17.user.UpdateUserRequest\x1a\n" +
 	".user.User\x12E\n" +
 	"\x0eChangePassword\x12\x1b.user.ChangePasswordRequest\x1a\x16.google.protobuf.Empty\x12E\n" +
-	"\x0eGetUserByEmail\x12\x1b.user.GetUserByEmailRequest\x1a\x16.user.UserWithPasswordBMZKgithub.com/CoffeeSi/social-network-microservices/user-service/proto/;userpbb\x06proto3"
+	"\x0eGetUserByEmail\x12\x1b.user.GetUserByEmailRequest\x1a\x16.user.UserWithPassword\x12C\n" +
+	"\fChangeStatus\x12\x1b.user.GetUserByEmailRequest\x1a\x16.google.protobuf.EmptyBMZKgithub.com/CoffeeSi/social-network-microservices/user-service/proto/;userpbb\x06proto3"
 
 var (
 	file_proto_user_proto_rawDescOnce sync.Once
@@ -858,15 +859,17 @@ var file_proto_user_proto_depIdxs = []int32{
 	7,  // 13: user.UserService.UpdateUser:input_type -> user.UpdateUserRequest
 	1,  // 14: user.UserService.ChangePassword:input_type -> user.ChangePasswordRequest
 	10, // 15: user.UserService.GetUserByEmail:input_type -> user.GetUserByEmailRequest
-	2,  // 16: user.UserService.CreateUser:output_type -> user.User
-	2,  // 17: user.UserService.GetUser:output_type -> user.User
-	9,  // 18: user.UserService.ListUsers:output_type -> user.ListUsersResponse
-	13, // 19: user.UserService.DeleteUser:output_type -> google.protobuf.Empty
-	2,  // 20: user.UserService.UpdateUser:output_type -> user.User
-	13, // 21: user.UserService.ChangePassword:output_type -> google.protobuf.Empty
-	3,  // 22: user.UserService.GetUserByEmail:output_type -> user.UserWithPassword
-	16, // [16:23] is the sub-list for method output_type
-	9,  // [9:16] is the sub-list for method input_type
+	10, // 16: user.UserService.ChangeStatus:input_type -> user.GetUserByEmailRequest
+	2,  // 17: user.UserService.CreateUser:output_type -> user.User
+	2,  // 18: user.UserService.GetUser:output_type -> user.User
+	9,  // 19: user.UserService.ListUsers:output_type -> user.ListUsersResponse
+	13, // 20: user.UserService.DeleteUser:output_type -> google.protobuf.Empty
+	2,  // 21: user.UserService.UpdateUser:output_type -> user.User
+	13, // 22: user.UserService.ChangePassword:output_type -> google.protobuf.Empty
+	3,  // 23: user.UserService.GetUserByEmail:output_type -> user.UserWithPassword
+	13, // 24: user.UserService.ChangeStatus:output_type -> google.protobuf.Empty
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name

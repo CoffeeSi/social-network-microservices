@@ -19,6 +19,7 @@ type UserRepo interface {
 	DeleteUser(ctx context.Context, id string) error
 	ChangePassword(ctx context.Context, id, password string) error
 	WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	ChangeStatus(ctx context.Context, email string) error
 }
 
 type UserUseCase struct {
@@ -154,4 +155,12 @@ func (us *UserUseCase) ChangePassword(ctx context.Context, id, oldPassword, newP
 
 		return us.repo.ChangePassword(txCtx, id, string(hashed))
 	})
+}
+
+func (us *UserUseCase) ChangeStatus(ctx context.Context, email string) error {
+	if email == "" || !model.EmailRegex.MatchString(email) {
+		return ErrInvalidEmail
+	}
+	return nil
+
 }

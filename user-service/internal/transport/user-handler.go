@@ -22,6 +22,7 @@ type UserUseCase interface {
 	DeleteUser(ctx context.Context, id string) error
 	ChangePassword(ctx context.Context, id, old_password, new_password string) error
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
+	ChangeStatus(ctx context.Context, email string) error
 }
 
 type UserHandler struct {
@@ -181,4 +182,14 @@ func (uh *UserHandler) GetUserByEmail(ctx context.Context, req *pb.GetUserByEmai
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return userWithPasswordToProto(&res), nil
+}
+
+func (uh *UserHandler) ChangeStatus(ctx context.Context, req *pb.GetUserByEmailRequest) (*emptypb.Empty, error) {
+	err := uh.usecase.ChangeStatus(ctx, req.Email)
+	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidEmail) {
+			return nil, status.Error(codes.InvalidArgument, "invalid email")
+		}
+	}
+	return &emptypb.Empty{}, nil
 }

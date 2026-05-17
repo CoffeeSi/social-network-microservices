@@ -30,15 +30,11 @@ services:
       - "${AUTH_GRPC_PORT:-50051}:${AUTH_GRPC_PORT:-50051}"
     depends_on:
       - nats
-      - user-service
     env_file:
       - ./auth-service/.env
-    environment:
-      - USER_GRPC_URL=user-service:50050
-
-  chat-service:
-    container_name: chat-service
-    build: ./chat-service
+  user-service:
+    container_name: user-service
+    build: ./user-service
     ports:
       - "${CHAT_GRPC_PORT:-50053}:${CHAT_GRPC_PORT:-50053}"
     depends_on:
