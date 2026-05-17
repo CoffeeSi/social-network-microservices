@@ -15,7 +15,7 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	port := os.Getenv("GRPC_PORT")
+	port := os.Getenv("AUTH_GRPC_PORT")
 	if port == "" {
 		port = "50051"
 	}
