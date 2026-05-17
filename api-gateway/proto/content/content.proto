@@ -20,6 +20,8 @@ service ContentService {
     rpc DeleteComment(DeleteCommentRequest) returns (google.protobuf.Empty);
     
     rpc ToggleLike(ToggleLikeRequest) returns (LikeResponse);
+    rpc GetMyPosts(GetMyPostsRequest) returns (ListPostsResponse);
+    rpc GetPostStats(GetPostStatsRequest) returns (PostStatsResponse);
 }
 
 
@@ -108,4 +110,20 @@ message ToggleLikeRequest {
 message LikeResponse {
     int32 new_like_count = 1;
     bool is_liked = 2; 
+}
+
+message GetMyPostsRequest {
+    string user_id = 1;
+    int32 page_size = 2;
+    int32 page = 3;
+}
+
+message GetPostStatsRequest {
+    string post_id = 1;
+}
+
+message PostStatsResponse {
+    string post_id = 1;
+    int32 like_count = 2;
+    int32 comment_count = 3;
 }
