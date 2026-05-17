@@ -9,47 +9,58 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type NotificationSubscriber struct {
-	nats   *nats.Conn
-	mailer *mailer.Mailer
+type emailJob struct {
+	email string
+	code  string
 }
 
-func NewNotificationSubscriber(nats *nats.Conn, mailer *mailer.Mailer) *NotificationSubscriber {
+type NotificationSubscriber struct {
+	nats       *nats.Conn
+	mailer     *mailer.Mailer
+	jobQueue   chan emailJob
+	numWorkers int
+}
+
+func NewNotificationSubscriber(nats *nats.Conn, mailer *mailer.Mailer, numWorkers int) *NotificationSubscriber {
 	return &NotificationSubscriber{
-		nats:   nats,
-		mailer: mailer,
+		nats:       nats,
+		mailer:     mailer,
+		jobQueue:   make(chan emailJob, 100),
+		numWorkers: numWorkers,
 	}
 }
 
 func (s *NotificationSubscriber) Start(subject string) error {
+	for i := range s.numWorkers {
+		go s.worker(i)
+	}
+
 	_, err := s.nats.QueueSubscribe(subject, "notification_group", func(msg *nats.Msg) {
 		log.Printf("New event: %s", subject)
 
 		var ev event.UserVerificationEvent
 		if err := json.Unmarshal(msg.Data, &ev); err != nil {
-			log.Printf("Unmarshal error %v", err)
+			log.Printf("Unmarshal error: %v", err)
 			return
 		}
-
-		err := s.sendEmail(ev.Email, ev.Code)
-		if err != nil {
-			log.Printf("Can't send email %s: %v", ev.Email, err)
-			return
+		select {
+		case s.jobQueue <- emailJob{email: ev.Email, code: ev.Code}:
+		default:
+			log.Printf("job queue is full, dropping email to %s", ev.Email)
 		}
-
-		log.Printf("Email is send %s", ev.Email)
 	})
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
-func (s *NotificationSubscriber) sendEmail(email, code string) error {
-	err := s.mailer.SendVerificationEmail(email, code)
-	if err != nil {
-		return err
+
+func (s *NotificationSubscriber) worker(id int) {
+	log.Printf("worker %d started", id)
+	for job := range s.jobQueue {
+		err := s.mailer.SendVerificationEmail(job.email, job.code)
+		if err != nil {
+			log.Printf("worker %d: can't send email to %s: %v", id, job.email, err)
+			continue
+		}
+		log.Printf("worker %d: email sent to %s", id, job.email)
 	}
-	return nil
 }
