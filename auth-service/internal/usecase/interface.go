@@ -10,7 +10,7 @@ type AuthUsecaseInterface interface {
 	RegisterUser(ctx context.Context, req model.RegisterRequest) error
 	LoginUser(ctx context.Context, req model.LoginRequest) (string, string, error)
 	RefreshToken(ctx context.Context, req model.RefreshTokenRequest) (string, error)
-	ChangeStatus(ctx context.Context, email string) error
+	Verify(ctx context.Context, email, code string) (bool, error)
 }
 
 type UserClientInterface interface {

@@ -37,7 +37,16 @@ func (c *UserClient) CreateUser(ctx context.Context, req model.Auth) error {
 	}
 	return nil
 }
-
+func (c *UserClient) ChangeStatus(ctx context.Context, email string) error {
+	pbReq := &pb_user.GetUserByEmailRequest{
+		Email: email,
+	}
+	_, err := c.pbUserClient.ChangeStatus(ctx, pbReq)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (c *UserClient) GetUserByEmail(ctx context.Context, email string) (model.Auth, error) {
 	pbReq := &pb_user.GetUserByEmailRequest{
 		Email: email,

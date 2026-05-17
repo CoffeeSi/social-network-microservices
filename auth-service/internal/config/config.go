@@ -6,12 +6,12 @@ import (
 )
 
 type Config struct {
-	GRPCPort    string
-	NatsURL     string
-	SecretKey   string
-	UserGRPCUrl string
-	REDIS       string
-	TTL         time.Duration
+	AuthGRPCPort string
+	NatsURL      string
+	SecretKey    string
+	UserGRPCUrl  string
+	REDIS        string
+	TTL          time.Duration
 }
 
 func NewConfig() *Config {
@@ -41,11 +41,11 @@ func NewConfig() *Config {
 	}
 	duration, _ := time.ParseDuration(TTL)
 	return &Config{
-		GRPCPort:    port,
-		NatsURL:     natsURL,
-		SecretKey:   secretKey,
-		UserGRPCUrl: userGRPCUrl,
-		REDIS:       REDIS,
-		TTL:         duration,
+		AuthGRPCPort: port,
+		NatsURL:      natsURL,
+		SecretKey:    secretKey,
+		UserGRPCUrl:  userGRPCUrl,
+		REDIS:        REDIS,
+		TTL:          duration,
 	}
 }
