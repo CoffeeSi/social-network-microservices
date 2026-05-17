@@ -131,11 +131,7 @@ func (cr *CachedUserRepository) PatchUser(ctx context.Context, id string, update
 	}
 
 	var updated model.User
-	err = cr.repo.WithTransaction(ctx, func(ctx context.Context) error {
-		var txErr error
-		updated, txErr = cr.repo.PatchUser(ctx, id, updateData)
-		return txErr
-	})
+	updated, err = cr.repo.PatchUser(ctx, id, updateData)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -161,14 +157,10 @@ func (cr *CachedUserRepository) DeleteUser(ctx context.Context, id string) error
 	if err != nil {
 		return err
 	}
-
-	err = cr.repo.WithTransaction(ctx, func(ctx context.Context) error {
-		return cr.repo.DeleteUser(ctx, id)
-	})
+	err = cr.repo.DeleteUser(ctx, id)
 	if err != nil {
 		return err
 	}
-
 	pipe := cr.redis.Pipeline()
 	pipe.Del(ctx, "user:"+id)
 	pipe.Del(ctx, "user:email:"+user.Email)
@@ -185,7 +177,7 @@ func (cr *CachedUserRepository) ChangePassword(ctx context.Context, id, password
 	if err != nil {
 		return err
 	}
-
+	cr.invalidateLists(ctx)
 	cr.redis.Del(ctx, "user:"+id)
 	return nil
 }
@@ -211,6 +203,6 @@ func (cr *CachedUserRepository) getListVersion(ctx context.Context) string {
 }
 
 func (cr *CachedUserRepository) ChangeStatus(ctx context.Context, email string) error {
-	err := cr.ChangeStatus(ctx, email)
+	err := cr.repo.ChangeStatus(ctx, email)
 	return err
 }

@@ -18,7 +18,7 @@ func NewConfig() *Config {
 		Username: getEnv("SMTP_USERNAME", ""),
 		Password: getEnv("SMTP_PASSWORD", ""),
 		From:     getEnv("SMTP_FROM", ""),
-		NatsURI:  getEnv("NatsURI", ""),
+		NatsURI:  getEnv("NATS_URL", ""),
 	}
 }
 

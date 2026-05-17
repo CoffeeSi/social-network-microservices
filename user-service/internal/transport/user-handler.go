@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/user-service/internal/repository"
@@ -121,6 +122,7 @@ func (uh *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest
 
 	res, err := uh.usecase.PatchUser(ctx, patchDTO)
 	if err != nil {
+		log.Printf("PatchUser error: %v", err)
 		if errors.Is(err, usecase.ErrInvalidEmail) {
 			return nil, status.Error(codes.InvalidArgument, "invalid email")
 		}

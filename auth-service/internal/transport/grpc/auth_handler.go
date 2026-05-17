@@ -62,3 +62,16 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 	return &pb.RefreshTokenResponse{AccessToken: accessToken}, nil
 }
+func (h *AuthHandler) VerifyUser(ctx context.Context, req *pb.VerifyUserRequest) (*pb.VerifyUserResponse, error) {
+	ok, err := h.uc.Verify(ctx, req.Email, req.Code)
+	if err != nil {
+		if err.Error() == "expired code" {
+			return nil, status.Error(codes.NotFound, "code expired or not found")
+		}
+		if err.Error() == "code does not match" {
+			return nil, status.Error(codes.InvalidArgument, "invalid code")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &pb.VerifyUserResponse{Success: ok}, nil
+}

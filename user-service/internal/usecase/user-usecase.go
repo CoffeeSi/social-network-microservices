@@ -130,7 +130,6 @@ func (us *UserUseCase) DeleteUser(ctx context.Context, id string) error {
 	}
 	return nil
 }
-
 func (us *UserUseCase) ChangePassword(ctx context.Context, id, oldPassword, newPassword string) error {
 	if id == "" {
 		return ErrIDEmpty
@@ -138,28 +137,30 @@ func (us *UserUseCase) ChangePassword(ctx context.Context, id, oldPassword, newP
 	if newPassword == "" {
 		return ErrInvalidPassword
 	}
-	return us.repo.WithTransaction(ctx, func(txCtx context.Context) error {
-		user, err := us.repo.GetUser(txCtx, id)
-		if err != nil {
-			return err
-		}
 
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
-			return ErrInvalidPassword
-		}
+	user, err := us.repo.GetUser(ctx, id)
+	if err != nil {
+		return err
+	}
 
-		hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return ErrInvalidPassword
+	}
 
-		return us.repo.ChangePassword(txCtx, id, string(hashed))
-	})
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return us.repo.ChangePassword(ctx, id, string(hashed))
 }
-
 func (us *UserUseCase) ChangeStatus(ctx context.Context, email string) error {
 	if email == "" || !model.EmailRegex.MatchString(email) {
 		return ErrInvalidEmail
+	}
+	err := us.repo.ChangeStatus(ctx, email)
+	if err != nil {
+		return err
 	}
 	return nil
 

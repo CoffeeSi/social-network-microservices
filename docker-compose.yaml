@@ -17,11 +17,17 @@ services:
     build: ./user-service
     ports:
       - "50050:50050"
-    environment:
-      - PORT=:50050
-      - MONGO_URI=mongodb://mongo:27017
+    env_file:
+      - ./user-service/.env
     depends_on:
       - mongo
+  notification-service:
+    container_name: notification-service
+    build: ./notification-service
+    ports:
+      - "50049:50049"
+    env_file:
+      - ./notification-service/.env
 
   auth-service:
     container_name: auth-service
@@ -32,17 +38,17 @@ services:
       - nats
     env_file:
       - ./auth-service/.env
-  user-service:
-    container_name: user-service
-    build: ./user-service
+  chat-service:
+    container_name: chat-service
+    build: ./chat-service
     ports:
       - "${CHAT_GRPC_PORT:-50053}:${CHAT_GRPC_PORT:-50053}"
     depends_on:
       - nats
       - mongo
       - user-service
-    env_file:
-      - ./chat-service/.env
+    # env_file:
+    #   - ./chat-service/.env
     environment:
       - USER_GRPC_URL=user-service:50050
       - CHAT_MONGO_URI=mongodb://mongo:27017
@@ -66,15 +72,15 @@ services:
       - nats
       - user-service
 
-  api-gateway:
-    container_name: api-gateway
-    build: ./api-gateway
-    ports:
-      - "${API_GATEWAY_PORT:-8080}:${API_GATEWAY_PORT:-8080}"
-    env_file:
-      - ./api-gateway/.env
-    depends_on:
-      - auth-service
-      - user-service
-      - content-service
-      - chat-service
+  # api-gateway:
+  #   container_name: api-gateway
+  #   build: ./api-gateway
+  #   ports:
+  #     - "${API_GATEWAY_PORT:-8080}:${API_GATEWAY_PORT:-8080}"
+  #   env_file:
+  #     - ./api-gateway/.env
+  #   depends_on:
+  #     - auth-service
+  #     - user-service
+  #     - content-service
+  #     - chat-service

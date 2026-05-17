@@ -11,8 +11,16 @@ service AuthService {
     rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
     // RefreshToken refreshes the access token using a refresh token
     rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc VerifyUser(VerifyUserRequest) returns (VerifyUserResponse);
+}
+message VerifyUserRequest {
+    string email = 1;
+    string code = 2;
 }
 
+message VerifyUserResponse {
+    bool success = 1;
+}
 message RegisterUserRequest {
     string first_name = 1;
     string last_name = 2;
