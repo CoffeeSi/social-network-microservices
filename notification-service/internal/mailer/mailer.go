@@ -28,5 +28,5 @@ func (m *Mailer) SendVerificationEmail(to, code string) error {
 	subject := "Subject: Verification code"
 	body := fmt.Sprintf("Your verification code is %s", code)
 	msg := []byte(subject + "\r\n" + body)
-	return smtp.SendMail(m.host, auth, m.from, []string{to}, msg)
+	return smtp.SendMail(m.host+":"+m.port, auth, m.from, []string{to}, msg)
 }

@@ -48,7 +48,7 @@ func Run(cfg *Config) {
 	userService := usecase.NewUserUseCase(cachedRepo) //mq later
 	userHandler := transport.NewUserHandler(userService)
 
-	lis, err := net.Listen("tcp", cfg.Port)
+	lis, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
