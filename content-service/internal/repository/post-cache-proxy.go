@@ -78,6 +78,10 @@ func (r *cachedPostRepository) GetUserPosts(ctx context.Context, id string, page
 	return r.rawRepo.GetUserPosts(ctx, id, pageSize, page)
 }
 
+func (r *cachedPostRepository) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return r.rawRepo.WithTransaction(ctx, fn)
+}
+
 func (r *cachedPostRepository) IncrementCommentCount(ctx context.Context, postID string, amount int32) error {
 	if err := r.rawRepo.IncrementCommentCount(ctx, postID, amount); err != nil {
 		return err

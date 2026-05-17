@@ -21,6 +21,19 @@ func NewPostRepo(col *mongo.Collection) *PostRepo {
 	return &PostRepo{col: col}
 }
 
+func (pr *PostRepo) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	session, err := pr.col.Database().Client().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, func(sessCtx context.Context) (interface{}, error) {
+		return nil, fn(sessCtx)
+	})
+	return err
+}
+
 func (r *PostRepo) CreatePost(ctx context.Context, post model.Post) (model.Post, error) {
 	postDao, err := dao.FromPostToDao(post)
 	if err != nil {
