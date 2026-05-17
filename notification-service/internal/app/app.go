@@ -9,7 +9,6 @@ import (
 )
 
 func Run(cfg *Config) {
-
 	nc, err := nats.Connect(cfg.NatsURI)
 	if err != nil {
 		log.Fatalf("failed to connect to nats: %v", err)
@@ -24,7 +23,7 @@ func Run(cfg *Config) {
 		cfg.From,
 	)
 
-	sub := subscriber.NewNotificationSubscriber(nc, m)
+	sub := subscriber.NewNotificationSubscriber(nc, m, cfg.NumWorkers)
 	if err := sub.Start("user.verification"); err != nil {
 		log.Fatalf("failed to start subscriber: %v", err)
 	}
