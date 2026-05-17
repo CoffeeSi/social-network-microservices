@@ -20,6 +20,7 @@ type UserRepoInterface interface {
 	DeleteUser(ctx context.Context, id string) error
 	ChangePassword(ctx context.Context, id, password string) error
 	WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	ChangeStatus(ctx context.Context, email string) error
 }
 type CachedUserRepository struct {
 	repo  UserRepoInterface
@@ -207,4 +208,9 @@ func (cr *CachedUserRepository) getListVersion(ctx context.Context) string {
 	}
 	return version
 
+}
+
+func (cr *CachedUserRepository) ChangeStatus(ctx context.Context, email string) error {
+	err := cr.ChangeStatus(ctx, email)
+	return err
 }

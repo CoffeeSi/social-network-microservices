@@ -14,6 +14,7 @@ service UserService{
     rpc UpdateUser(UpdateUserRequest) returns (User);
     rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
     rpc GetUserByEmail(GetUserByEmailRequest) returns (UserWithPassword);
+    rpc ChangeStatus(GetUserByEmailRequest) returns (google.protobuf.Empty);
 }
 
 message CreateUserRequest {
