@@ -44,7 +44,7 @@ func (uc *CommentUseCase) AddComment(ctx context.Context, input dto.CreateCommen
 
 	exists, err := uc.userClient.UserExists(ctx, input.UserID)
 	if err != nil {
-		return model.Comment{}, fmt.Errorf("failed to verify user status: %w", err)
+		return model.Comment{}, fmt.Errorf("failed to verify user exists: %w", err)
 	}
 	if !exists {
 		return model.Comment{}, model.ErrInvalidID
@@ -55,21 +55,29 @@ func (uc *CommentUseCase) AddComment(ctx context.Context, input dto.CreateCommen
 		return model.Comment{}, err
 	}
 
-	comment := model.Comment{
-		PostID:    input.PostID,
-		UserID:    input.UserID,
-		Text:      input.Text,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-	}
+	var createdComment model.Comment
+	err = uc.postRepo.WithTransaction(ctx, func(txCtx context.Context) error {
+		comment := model.Comment{
+			PostID:    input.PostID,
+			UserID:    input.UserID,
+			Text:      input.Text,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		}
 
-	createdComment, err := uc.commentRepo.CreateComment(ctx, comment)
+		var err error
+		createdComment, err = uc.commentRepo.CreateComment(txCtx, comment)
+		if err != nil {
+			return fmt.Errorf("failed to save comment: %w", err)
+		}
+
+		if err := uc.postRepo.IncrementCommentCount(txCtx, input.PostID, 1); err != nil {
+			return fmt.Errorf("failed to incremen comment counter: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return model.Comment{}, fmt.Errorf("failed to save comment document: %w", err)
-	}
-
-	if err := uc.postRepo.IncrementCommentCount(ctx, input.PostID, 1); err != nil {
-		return model.Comment{}, fmt.Errorf("failed to increment post comment counter: %w", err)
+		return model.Comment{}, err
 	}
 
 	return createdComment, nil
@@ -135,11 +143,13 @@ func (uc *CommentUseCase) DeleteComment(ctx context.Context, commentID, requesto
 		return model.ErrPermissionDenied
 	}
 
-	if err := uc.commentRepo.DeleteComment(ctx, commentID); err != nil {
-		return fmt.Errorf("failed to delete comment entry: %w", err)
-	}
-	if err := uc.postRepo.IncrementCommentCount(ctx, comment.PostID, -1); err != nil {
-		return fmt.Errorf("failed to decrement post comment counter: %w", err)
-	}
-	return nil
+	return uc.postRepo.WithTransaction(ctx, func(txCtx context.Context) error {
+		if err := uc.commentRepo.DeleteComment(txCtx, commentID); err != nil {
+			return fmt.Errorf("failed to delete comment: %w", err)
+		}
+		if err := uc.postRepo.IncrementCommentCount(txCtx, comment.PostID, -1); err != nil {
+			return fmt.Errorf("failed to decrement post comment counter: %w", err)
+		}
+		return nil
+	})
 }
