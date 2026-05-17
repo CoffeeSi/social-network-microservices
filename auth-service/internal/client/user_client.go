@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/CoffeeSi/social-network-microservices/auth-service/internal/model"
-	pb_user "github.com/CoffeeSi/social-network-microservices/auth-service/proto/user"
+	pb_user "github.com/IsFariza/maxat-protobuf/user-service-pb"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
