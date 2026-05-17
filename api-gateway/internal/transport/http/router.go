@@ -29,6 +29,8 @@ func NewRouter(g *handler.Gateway) *gin.Engine {
 		posts := v1.Group("/posts")
 		posts.POST("", g.CreatePost)
 		posts.GET("", g.ListPosts)
+		posts.GET("/me", g.GetMyPosts)
+		posts.GET("/:id/stats", g.GetPostStats)
 		posts.GET("/:id", g.GetPost)
 		posts.PATCH("/:id", g.UpdatePost)
 		posts.DELETE("/:id", g.DeletePost)
