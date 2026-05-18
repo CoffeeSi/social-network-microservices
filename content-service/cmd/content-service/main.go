@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +19,9 @@ import (
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/transport"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/usecase"
 	pb "github.com/IsFariza/maxat-protobuf/content-service-pb"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/nats-io/nats.go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -96,9 +99,22 @@ func main() {
 		log.Fatalf("Failed to bind network socket on port %s: %v", cfg.GRPCPort, err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
+	)
 	pb.RegisterContentServiceServer(grpcServer, grpcHandler)
+	grpc_prometheus.Register(grpcServer)
+	grpc_prometheus.EnableHandlingTimeHistogram()
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
 
+		log.Printf("Starting Prometheus metrics server on :8082/metrics")
+		if err := http.ListenAndServe(":"+cfg.MetricsPort, mux); err != nil { // OS GETENV
+			log.Printf("ERROR: Prometheus http server failed: %v", err)
+		}
+	}()
 	go func() {
 		log.Printf("Content gRPC active on port :%s", cfg.GRPCPort)
 		if err := grpcServer.Serve(listener); err != nil {

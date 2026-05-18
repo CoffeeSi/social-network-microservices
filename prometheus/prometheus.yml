@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'userservice'
+    static_configs:
+      - targets: ['user-service:8081']
+    metrics_path: /metrics
+
+  - job_name: 'contentservice'
+    static_configs:
+      - targets: ['content-service:8082']
+    metrics_path: /metrics
