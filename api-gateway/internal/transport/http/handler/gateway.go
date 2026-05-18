@@ -1,10 +1,10 @@
 package handler
 
 import (
-	authpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/auth"
-	chatpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/chat"
-	contentpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/content"
-	userpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/user"
+	authpb "github.com/IsFariza/maxat-protobuf/auth-service-pb"
+	chatpb "github.com/IsFariza/maxat-protobuf/chat-service-pb"
+	contentpb "github.com/IsFariza/maxat-protobuf/content-service-pb"
+	userpb "github.com/IsFariza/maxat-protobuf/user-service-pb"
 )
 
 type Dependencies struct {

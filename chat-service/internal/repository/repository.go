@@ -63,16 +63,13 @@ func (r *ChatRepository) GetChatByID(ctx context.Context, chatID string) (*model
 }
 
 func (r *ChatRepository) GetMessageByID(ctx context.Context, chatID, messageID string) (*model.ChatMessage, error) {
-	chatOid, err := primitive.ObjectIDFromHex(chatID)
-	if err != nil {
-		return nil, err
-	}
 	messageOid, err := primitive.ObjectIDFromHex(messageID)
 	if err != nil {
 		return nil, err
 	}
 	var entity chatMessageMongoEntity
-	err = r.messagesCol.FindOne(ctx, bson.M{"chat_id": chatOid, "_id": messageOid}).Decode(&entity)
+	// chat_id is stored as string in messages (see mongo_entity.chatMessageMongoEntity).
+	err = r.messagesCol.FindOne(ctx, bson.M{"chat_id": chatID, "_id": messageOid}).Decode(&entity)
 	if err != nil {
 		if err == mongodb.ErrNoDocuments {
 			return nil, nil

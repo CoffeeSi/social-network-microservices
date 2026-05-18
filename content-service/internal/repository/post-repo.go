@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
@@ -24,14 +25,24 @@ func NewPostRepo(col *mongo.Collection) *PostRepo {
 func (pr *PostRepo) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
 	session, err := pr.col.Database().Client().StartSession()
 	if err != nil {
-		return err
+		return fn(ctx)
 	}
 	defer session.EndSession(ctx)
 
 	_, err = session.WithTransaction(ctx, func(sessCtx context.Context) (interface{}, error) {
 		return nil, fn(sessCtx)
 	})
+	if err != nil && transactionUnsupported(err) {
+		return fn(ctx)
+	}
 	return err
+}
+
+func transactionUnsupported(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "Transaction numbers") ||
+		strings.Contains(msg, "replica set") ||
+		strings.Contains(msg, "mongos")
 }
 
 func (r *PostRepo) CreatePost(ctx context.Context, post model.Post) (model.Post, error) {

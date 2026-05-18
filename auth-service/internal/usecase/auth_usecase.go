@@ -127,6 +127,9 @@ func (uc *AuthUsecase) LoginUser(ctx context.Context, req model.LoginRequest) (s
 	if err != nil {
 		return "", "", err
 	}
+	if !utils.CheckPasswordHash(req.Password, user.Password) {
+		return "", "", errors.New("invalid password")
+	}
 	if !user.IsActive {
 		return "", "", errors.New("User is not active")
 	}

@@ -8,36 +8,31 @@ import {
   editMessage,
   getMessages,
   sendMessage,
+  sendReadReceipt,
+  sendTypingStatus,
 } from '@/features/chat/api/chatApi';
 import { Button } from '@/shared/ui/Button';
 import { Spinner } from '@/shared/ui/Spinner';
 import { clsx } from '@/shared/lib/clsx';
+import {
+  formatTimeShort,
+  parseTimestamp,
+  pickTimestampField,
+  toDateTimeAttr,
+} from '@/shared/lib/formatDateTime';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+function messageTimestamp(m) {
+  return pickTimestampField(m, 'created_at', 'createdAt');
+}
+
 function messageTimeMs(m) {
-  const t = m?.created_at;
-  if (t == null) return 0;
-  if (typeof t === 'string') {
-    const ms = Date.parse(t);
-    return Number.isFinite(ms) ? ms : 0;
-  }
-  if (typeof t === 'object' && t.seconds != null) return Number(t.seconds) * 1000;
-  return 0;
+  const d = parseTimestamp(messageTimestamp(m));
+  return d ? d.getTime() : 0;
 }
 
 function sortMessagesAsc(list) {
   return [...(list ?? [])].sort((a, b) => messageTimeMs(a) - messageTimeMs(b));
-}
-
-function formatMessageClock(m) {
-  const ms = messageTimeMs(m);
-  if (!ms) return '';
-  return new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-}
-
-function messageIso(m) {
-  const ms = messageTimeMs(m);
-  return ms ? new Date(ms).toISOString() : undefined;
 }
 
 export function ChatThread({ chatId }) {
@@ -50,7 +45,10 @@ export function ChatThread({ chatId }) {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editPending, setEditPending] = useState(false);
+  const [typingNote, setTypingNote] = useState('');
   const scrollRef = useRef(null);
+  const typingTimerRef = useRef(null);
+  const typingOffRef = useRef(null);
 
   const sorted = useMemo(() => sortMessagesAsc(messages), [messages]);
 
@@ -73,8 +71,13 @@ export function ChatThread({ chatId }) {
       try {
         const data = await getMessages(chatId, { page: 1, page_size: 100 });
         if (!cancelled) {
-          setMessages(data.messages ?? []);
+          const list = data.messages ?? [];
+          setMessages(list);
           setError('');
+          const latest = sortMessagesAsc(list).at(-1);
+          if (latest?.id && latest.sender_id !== userId) {
+            sendReadReceipt(chatId, latest.id).catch(() => {});
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load messages');
@@ -85,11 +88,40 @@ export function ChatThread({ chatId }) {
     return () => {
       cancelled = true;
     };
+  }, [chatId, userId]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (typingOffRef.current) clearTimeout(typingOffRef.current);
+      if (chatId) sendTypingStatus(chatId, { is_typing: false }).catch(() => {});
+    };
   }, [chatId]);
 
   useEffect(() => {
     if (!loading) scrollToBottom();
   }, [sorted, loading, scrollToBottom]);
+
+  function notifyTyping(isTyping) {
+    if (!chatId) return;
+    sendTypingStatus(chatId, { is_typing: isTyping }).catch(() => {});
+    if (isTyping) setTypingNote('Typing sent…');
+    else setTypingNote('');
+  }
+
+  function onTextChange(value) {
+    setText(value);
+    if (!chatId) return;
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => notifyTyping(true), 300);
+    if (typingOffRef.current) clearTimeout(typingOffRef.current);
+    typingOffRef.current = setTimeout(() => notifyTyping(false), 2000);
+  }
+
+  function onInputBlur() {
+    if (typingOffRef.current) clearTimeout(typingOffRef.current);
+    notifyTyping(false);
+  }
 
   async function onSend(e) {
     e.preventDefault();
@@ -100,6 +132,7 @@ export function ChatThread({ chatId }) {
       const res = await sendMessage(chatId, { content: text.trim() });
       if (res?.message) setMessages((m) => [...m, res.message]);
       setText('');
+      notifyTyping(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Send failed');
     } finally {
@@ -161,8 +194,9 @@ export function ChatThread({ chatId }) {
           {sorted.map((msg) => {
             const isOwn = Boolean(userId && msg.sender_id === userId);
             const isEditing = editingId === msg.id;
-            const clock = formatMessageClock(msg);
-            const iso = messageIso(msg);
+            const ts = messageTimestamp(msg);
+            const clock = formatTimeShort(ts);
+            const iso = toDateTimeAttr(ts);
 
             return (
               <li key={msg.id} className={clsx('msg-list__row', isOwn && 'msg-list__row--own')}>
@@ -222,11 +256,13 @@ export function ChatThread({ chatId }) {
         </ul>
       </div>
       <div className="chat-thread__input-wrap">
+        {typingNote ? <p className="small muted chat-thread__typing">{typingNote}</p> : null}
         <form className="chat-thread__input" onSubmit={onSend}>
           <input
             className="input"
             value={text}
-            onChange={(ev) => setText(ev.target.value)}
+            onChange={(ev) => onTextChange(ev.target.value)}
+            onBlur={onInputBlur}
             placeholder="Message…"
           />
           <Button type="submit" disabled={sending || !text.trim()}>

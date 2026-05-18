@@ -3,7 +3,7 @@ module github.com/CoffeeSi/social-network-microservices/content-service
 go 1.26.3
 
 require (
-	github.com/IsFariza/maxat-protobuf v0.0.0-20260516115732-3fba509fd96e
+	github.com/IsFariza/maxat-protobuf v0.0.0-20260517222910-2801c100dab9
 	github.com/nats-io/nats.go v1.52.0
 	github.com/redis/go-redis/v9 v9.19.0
 	go.mongodb.org/mongo-driver/v2 v2.6.0

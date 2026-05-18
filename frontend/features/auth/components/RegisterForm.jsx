@@ -29,7 +29,7 @@ export function RegisterForm() {
         email,
         password,
       });
-      router.replace(`${routes.login}?registered=1`);
+      router.replace(`${routes.confirmEmail}?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

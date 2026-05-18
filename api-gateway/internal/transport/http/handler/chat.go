@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	chatpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/chat"
+	chatpb "github.com/IsFariza/maxat-protobuf/chat-service-pb"
 	"github.com/gin-gonic/gin"
 )
 

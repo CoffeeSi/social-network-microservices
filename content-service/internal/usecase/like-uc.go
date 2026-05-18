@@ -43,7 +43,12 @@ func (uc *LikeUseCase) ToggleLike(ctx context.Context, postID, userID string) (i
 		return 0, false, model.ErrInvalidID
 	}
 	if uc.commandBus != nil {
-		return uc.commandBus.RequestToggleLike(ctx, postID, userID)
+		count, liked, err := uc.commandBus.RequestToggleLike(ctx, postID, userID)
+		if err == nil {
+			return count, liked, nil
+		}
+		// Fallback when NATS request/reply is unavailable (e.g. timeout during local dev).
+		return uc.ProcessToggleLike(ctx, postID, userID)
 	}
 	return uc.ProcessToggleLike(ctx, postID, userID)
 }

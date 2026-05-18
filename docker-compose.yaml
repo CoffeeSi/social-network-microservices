@@ -101,6 +101,36 @@ services:
       - mongo-replica
       - nats
       - user-service
+
+  api-gateway:
+    container_name: api-gateway
+    build: ./api-gateway
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    environment:
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      - AUTH_SERVICE_ADDR=auth-service:50051
+      - USER_SERVICE_ADDR=user-service:50050
+      - CONTENT_SERVICE_ADDR=content-service:50052
+      - CHAT_SERVICE_ADDR=chat-service:50053
+      - SECRET_KEY=${SECRET_KEY:-secret-key}
+    depends_on:
+      - auth-service
+      - user-service
+      - content-service
+      - chat-service
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    ports:
+      - "80:80"
+    env_file:
+      - ./frontend/.env
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://api-gateway:8080}
+    depends_on:
+      - api-gateway
   prometheus:
     image: prom/prometheus:latest
     restart: unless-stopped

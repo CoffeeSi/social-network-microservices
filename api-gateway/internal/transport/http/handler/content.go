@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	contentpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/content"
+	contentpb "github.com/IsFariza/maxat-protobuf/content-service-pb"
 	"github.com/gin-gonic/gin"
 )
 

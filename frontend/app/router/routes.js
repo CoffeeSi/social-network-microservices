@@ -6,11 +6,11 @@ export const routes = {
   home: '/',
   login: '/login',
   register: '/register',
-  feed: '/app/feed',
-  users: '/app/users',
-  /** Current user — redirects to /app/users/{id from JWT} */
-  profile: '/app/profile',
-  userProfile: (userId) => `/app/users/${encodeURIComponent(userId)}`,
-  chat: '/app/chat',
-  chatThread: (chatId) => `/app/chat/${encodeURIComponent(chatId)}`,
+  confirmEmail: '/confirm-email',
+  feed: '/feed',
+  users: '/users',
+  profile: '/profile',
+  userProfile: (userId) => `/users/${encodeURIComponent(userId)}`,
+  chat: '/chat',
+  chatThread: (chatId) => `/chat/${encodeURIComponent(chatId)}`,
 };

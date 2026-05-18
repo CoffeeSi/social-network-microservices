@@ -17,6 +17,7 @@ func NewRouter(g *handler.Gateway) *gin.Engine {
 		auth.POST("/register", g.Register)
 		auth.POST("/login", g.Login)
 		auth.POST("/refresh", g.Refresh)
+		auth.POST("/verify", g.Verify)
 
 		users := v1.Group("/users")
 		users.POST("", g.CreateUser)

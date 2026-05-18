@@ -6,15 +6,7 @@ import { routes } from '@/app/router/routes';
 import { listUsers } from '@/features/users/api/usersApi';
 import { Spinner } from '@/shared/ui/Spinner';
 import { clsx } from '@/shared/lib/clsx';
-
-function formatTime(iso) {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
+import { formatDateTime, pickTimestampField } from '@/shared/lib/formatDateTime';
 
 export function UserList() {
   const [state, setState] = useState({ loading: true, error: '', data: null });
@@ -50,7 +42,9 @@ export function UserList() {
               {u.first_name} {u.last_name}
             </span>
             <span className="user-list__meta">{u.email}</span>
-            <span className="user-list__meta">Joined {formatTime(u.created_at)}</span>
+            <span className="user-list__meta">
+              Joined {formatDateTime(pickTimestampField(u, 'created_at', 'createdAt'))}
+            </span>
           </Link>
         </li>
       ))}

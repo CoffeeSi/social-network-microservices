@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"github.com/CoffeeSi/social-network-microservices/chat-service/internal/model"
-	pb "github.com/CoffeeSi/social-network-microservices/chat-service/proto"
+	pb "github.com/IsFariza/maxat-protobuf/chat-service-pb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

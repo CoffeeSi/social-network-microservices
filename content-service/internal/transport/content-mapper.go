@@ -2,7 +2,7 @@ package transport
 
 import (
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
-	pb "github.com/CoffeeSi/social-network-microservices/content-service/proto"
+	pb "github.com/IsFariza/maxat-protobuf/content-service-pb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

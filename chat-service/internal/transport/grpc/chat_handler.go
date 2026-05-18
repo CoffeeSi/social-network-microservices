@@ -6,7 +6,7 @@ import (
 
 	"github.com/CoffeeSi/social-network-microservices/chat-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/chat-service/internal/usecase"
-	pb "github.com/CoffeeSi/social-network-microservices/chat-service/proto"
+	pb "github.com/IsFariza/maxat-protobuf/chat-service-pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
