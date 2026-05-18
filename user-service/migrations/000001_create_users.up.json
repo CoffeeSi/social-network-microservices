@@ -1,0 +1,30 @@
+[
+  {
+    "create": "users",
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["first_name", "last_name", "email", "dob", "created_at"],
+        "properties": {
+          "first_name":  { "bsonType": "string" },
+          "last_name":   { "bsonType": "string" },
+          "email":       { "bsonType": "string" },
+          "password":    { "bsonType": "string" },
+          "dob":         { "bsonType": "date" },
+          "is_active":   { "bsonType": "bool" },
+          "created_at":  { "bsonType": "date" }
+        }
+      }
+    }
+  },
+  {
+    "createIndexes": "users",
+    "indexes": [
+      {
+        "key": { "email": 1 },
+        "name": "email_unique",
+        "unique": true
+      }
+    ]
+  }
+]

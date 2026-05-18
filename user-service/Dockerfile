@@ -16,5 +16,6 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/main .
+COPY migrations/ ./migrations/
 EXPOSE 50050
 CMD ["./main"]
