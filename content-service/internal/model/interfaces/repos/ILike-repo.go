@@ -9,4 +9,5 @@ import (
 type LikeRepository interface {
 	LikePost(ctx context.Context, like model.Like) error
 	UnlikePost(ctx context.Context, postID, userID string) error
+	IsLiked(ctx context.Context, postID, userID string) (bool, error)
 }

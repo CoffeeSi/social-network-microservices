@@ -36,8 +36,26 @@ func (g *Gateway) ListPosts(c *gin.Context) {
 	writeGRPC(c, resp, err, http.StatusOK)
 }
 
+func (g *Gateway) GetMyPosts(c *gin.Context) {
+	userID, ok := g.requireUserID(c)
+	if !ok {
+		return
+	}
+	resp, err := g.content.GetMyPosts(c.Request.Context(), &contentpb.GetMyPostsRequest{
+		UserId:   userID,
+		PageSize: int32(queryInt(c, "page_size", 20)),
+		Page:     int32(queryInt(c, "page", 1)),
+	})
+	writeGRPC(c, resp, err, http.StatusOK)
+}
+
 func (g *Gateway) GetPost(c *gin.Context) {
 	resp, err := g.content.GetPost(c.Request.Context(), &contentpb.GetPostRequest{Id: c.Param("id")})
+	writeGRPC(c, resp, err, http.StatusOK)
+}
+
+func (g *Gateway) GetPostStats(c *gin.Context) {
+	resp, err := g.content.GetPostStats(c.Request.Context(), &contentpb.GetPostStatsRequest{PostId: c.Param("id")})
 	writeGRPC(c, resp, err, http.StatusOK)
 }
 
