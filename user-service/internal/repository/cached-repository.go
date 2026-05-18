@@ -204,5 +204,7 @@ func (cr *CachedUserRepository) getListVersion(ctx context.Context) string {
 
 func (cr *CachedUserRepository) ChangeStatus(ctx context.Context, email string) error {
 	err := cr.repo.ChangeStatus(ctx, email)
+	cr.redis.invalidateLists(ctx)
+	cr.redis.Del(ctx, "user:email:"+email)
 	return err
 }

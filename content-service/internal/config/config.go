@@ -3,16 +3,18 @@ package config
 import "os"
 
 type Config struct {
-	GRPCPort string
-	MongoURI string
-	DBName   string
+	GRPCPort    string
+	MongoURI    string
+	DBName      string
+	MetricsPort string
 }
 
 func LoadConfig() Config {
 	return Config{
-		GRPCPort: getEnv("GRPC_PORT", "50053"),
-		MongoURI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
-		DBName:   getEnv("DB_NAME", "maxat_content_db"),
+		GRPCPort:    getEnv("GRPC_PORT", "50053"),
+		MongoURI:    getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		DBName:      getEnv("DB_NAME", "maxat_content_db"),
+		MetricsPort: getEnv("PROMETHEUS_PORT", "8082"),
 	}
 }
 func getEnv(key, fallback string) string {
