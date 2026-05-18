@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	userpb "github.com/CoffeeSi/social-network-microservices/api-gateway/proto/user"
+	userpb "github.com/IsFariza/maxat-protobuf/user-service-pb"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"

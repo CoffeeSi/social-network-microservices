@@ -10,3 +10,8 @@ export function registerUser(payload) {
 export function loginUser(payload) {
   return apiJson(endpoints.auth.login, { method: 'POST', body: payload, skipAuth: true });
 }
+
+/** @param {{ token?: string, email?: string }} payload */
+export function verifyUser(payload) {
+  return apiJson(endpoints.auth.verify, { method: 'POST', body: payload, skipAuth: true });
+}

@@ -3,18 +3,18 @@ module github.com/CoffeeSi/social-network-microservices/auth-service
 go 1.26.3
 
 require (
+	github.com/IsFariza/maxat-protobuf v0.0.0-20260517222910-2801c100dab9
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/redis/go-redis/v9 v9.19.0
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
 
 require (
-	github.com/IsFariza/maxat-protobuf v0.0.0-20260517082917-9388e0e512fd // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/nats-io/nkeys v0.4.15 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/redis/go-redis/v9 v9.19.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 )
 

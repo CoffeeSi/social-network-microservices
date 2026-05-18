@@ -1,11 +1,12 @@
 module github.com/CoffeeSi/social-network-microservices/chat-service
 
-go 1.26.2
+go 1.26.3
 
 require (
+	github.com/IsFariza/maxat-protobuf v0.0.0-20260517222910-2801c100dab9
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	go.mongodb.org/mongo-driver v1.17.9
-	google.golang.org/grpc v1.81.0
+	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
 
