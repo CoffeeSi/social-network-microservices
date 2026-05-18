@@ -25,6 +25,9 @@ func Run(cfg *Config) {
 	if err != nil {
 		log.Fatalf("fail to connect to mongo %v", err)
 	}
+	if err := db.RunMigrations(cfg.MongoURIUMigration, cfg.Migration); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
 	db := client.Database("user_db")
 	//mq, err := event.NewNatsPublisher(cfg.NatsURI)
 	// if err != nil {

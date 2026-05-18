@@ -3,25 +3,28 @@ package app
 import "os"
 
 type Config struct {
-	Port           string
-	MongoURI       string
-	Migration      string
-	NatsURI        string
-	REDIS          string
-	TTL            string
-	RPM            string
-	PortPrometheus string
+	Port               string
+	MongoURI           string
+	Migration          string
+	NatsURI            string
+	REDIS              string
+	TTL                string
+	RPM                string
+	PortPrometheus     string
+	MongoURIUMigration string
 }
 
 func NewConfig() *Config {
 	return &Config{
-		Port:           getEnv("PORT", ":50050"),
-		MongoURI:       getEnv("MONGO_URI", "mongodb://localhost:27017"),
-		NatsURI:        getEnv("NATS_URI", "nats://localhost:4222"),
-		REDIS:          getEnv("REDIS", "redis://localhost:6379"),
-		TTL:            getEnv("CACHE_TTL_SECONDS", "60"),
-		RPM:            getEnv("RATE_LIMIT_RPM", "100"),
-		PortPrometheus: getEnv("PORT_PROMETHEUS", "8081"),
+		Port:               getEnv("PORT", ":50050"),
+		MongoURI:           getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		NatsURI:            getEnv("NATS_URI", "nats://localhost:4222"),
+		REDIS:              getEnv("REDIS", "redis://localhost:6379"),
+		TTL:                getEnv("CACHE_TTL_SECONDS", "60"),
+		RPM:                getEnv("RATE_LIMIT_RPM", "100"),
+		PortPrometheus:     getEnv("PORT_PROMETHEUS", "8081"),
+		Migration:          getEnv("MIGRATIONS", "file://migrations"),
+		MongoURIUMigration: getEnv("MongoURIUMigration", ""),
 	}
 
 }
