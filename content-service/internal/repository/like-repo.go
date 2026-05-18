@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
@@ -28,7 +29,7 @@ func (r *LikeRepo) LikePost(ctx context.Context, like model.Like) error {
 		if mongo.IsDuplicateKeyError(err) {
 			return model.ErrAlreadyLiked
 		}
-		return fmt.Errorf("failed to insert like record: %w", err)
+		return fmt.Errorf("failed to insert like: %w", err)
 	}
 	return nil
 }
@@ -47,10 +48,34 @@ func (r *LikeRepo) UnlikePost(ctx context.Context, postID, userID string) error 
 		"user_id": uID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete liek record: %w", err)
+		return fmt.Errorf("failed to delete liek: %w", err)
 	}
 	if result.DeletedCount == 0 {
 		return model.ErrLikeNotFound
 	}
 	return nil
+}
+
+func (r *LikeRepo) IsLiked(ctx context.Context, postID, userID string) (bool, error) {
+	pID, err := bson.ObjectIDFromHex(postID)
+	if err != nil {
+		return false, model.ErrInvalidID
+	}
+	uID, err := bson.ObjectIDFromHex(userID)
+	if err != nil {
+		return false, model.ErrInvalidID
+	}
+
+	err = r.col.FindOne(ctx, bson.M{
+		"post_id": pID,
+		"user_id": uID,
+	}).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check like status: %w", err)
+	}
+
+	return true, nil
 }

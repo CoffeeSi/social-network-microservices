@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -69,30 +68,50 @@ func (uc *LikeUseCase) ProcessToggleLike(ctx context.Context, postID, userID str
 		return 0, false, err
 	}
 
-	like := model.Like{
-		PostID:    postID,
-		UserID:    userID,
-		CreatedAt: time.Now().UTC(),
+	alreadyLiked, err := uc.likeRepo.IsLiked(ctx, postID, userID)
+	if err != nil {
+		return 0, false, err
 	}
 
-	if err := uc.likeRepo.LikePost(ctx, like); err == nil {
-		if err := uc.postRepo.IncrementLikeCount(ctx, postID, 1); err != nil {
-			return 0, false, err
+	var count int32
+	var liked bool
+	err = uc.postRepo.WithTransaction(ctx, func(txCtx context.Context) error {
+		if !alreadyLiked {
+			like := model.Like{
+				PostID:    postID,
+				UserID:    userID,
+				CreatedAt: time.Now().UTC(),
+			}
+
+			if err := uc.likeRepo.LikePost(txCtx, like); err != nil {
+				return err
+			}
+			if err := uc.postRepo.IncrementLikeCount(txCtx, postID, 1); err != nil {
+				return err
+			}
+
+			count = post.LikeCount + 1
+			liked = true
+			return nil
 		}
-		return post.LikeCount + 1, true, nil
-	} else if !errors.Is(err, model.ErrAlreadyLiked) {
+
+		if err := uc.likeRepo.UnlikePost(txCtx, postID, userID); err != nil {
+			return err
+		}
+		if err := uc.postRepo.IncrementLikeCount(txCtx, postID, -1); err != nil {
+			return err
+		}
+		if post.LikeCount <= 0 {
+			count = 0
+		} else {
+			count = post.LikeCount - 1
+		}
+		liked = false
+		return nil
+	})
+	if err != nil {
 		return 0, false, err
 	}
 
-	if err := uc.likeRepo.UnlikePost(ctx, postID, userID); err != nil {
-		return 0, false, err
-	}
-	if err := uc.postRepo.IncrementLikeCount(ctx, postID, -1); err != nil {
-		return 0, false, err
-	}
-
-	if post.LikeCount <= 0 {
-		return 0, false, nil
-	}
-	return post.LikeCount - 1, false, nil
+	return count, liked, nil
 }
