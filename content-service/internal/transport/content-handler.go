@@ -8,7 +8,7 @@ import (
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/model"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/usecase/dto"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/usecase/interfaces"
-	pb "github.com/CoffeeSi/social-network-microservices/content-service/proto"
+	pb "github.com/IsFariza/maxat-protobuf/content-service-pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -2,7 +2,6 @@ services:
   mongo:
     image: mongo:latest
     container_name: mongo
-    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all" ]
     ports:
       - "27017:27017"
 
@@ -67,7 +66,7 @@ services:
       - "50052:50052"
     environment:
       - GRPC_PORT=50052
-      - MONGO_URI=mongodb://mongo:27017/?replicaSet=rs0
+      - MONGO_URI=mongodb://mongo:27017
       - DB_NAME=maxat_content_db
       - REDIS_ADDR=redis:6379
       - USER_SERVICE_URL=user-service:50050
