@@ -26,7 +26,7 @@ export function NavBar() {
   return (
     <header className="nav">
       <Link href={routes.home} className="nav__brand">
-        Social
+        MAXat
       </Link>
       <nav className="nav__links">
         {isAuthenticated ? (

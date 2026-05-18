@@ -10,7 +10,7 @@ export function HomePage() {
 
   return (
     <div className="page page--center">
-      <Card title="Social network client">
+      <Card title="MAXat">
         <p className="lede">
           Feature-based Next.js UI for your microservices. It calls a REST-shaped API gateway — map these routes in
           your gateway to the existing gRPC services (auth, users, content, chat).

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { getChats } from '@/features/chat/api/chatApi';
+import { CreateGroupChatForm } from '@/features/chat/components/CreateGroupChatForm';
 import { fetchPeerDisplayNames, formatChatTitle } from '@/features/chat/lib/chatTitles';
 import { routes } from '@/app/router/routes';
 import { clsx } from '@/shared/lib/clsx';
@@ -13,12 +14,15 @@ import { Spinner } from '@/shared/ui/Spinner';
 export function ChatSidebar() {
   const pathname = usePathname();
   const { userId, ready } = useAuth();
+  const [reloadKey, setReloadKey] = useState(0);
   const [state, setState] = useState({
     loading: true,
     error: '',
     chats: [],
     nameByUserId: {},
   });
+
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     if (!ready) return;
@@ -46,34 +50,40 @@ export function ChatSidebar() {
     return () => {
       cancelled = true;
     };
-  }, [userId, ready]);
+  }, [userId, ready, reloadKey]);
 
   if (!ready || state.loading) return <Spinner />;
   if (state.error) return <p className="muted small">{state.error}</p>;
 
-  if (state.chats.length === 0) {
-    return <p className="muted small">No conversations yet. Start one from another screen once the API is wired.</p>;
-  }
-
   return (
-    <nav className="chat-sidebar">
-      <ul>
-        {state.chats.map((c) => {
-          const href = routes.chatThread(c.id);
-          const active = pathname === href;
-          const title = formatChatTitle(c, state.nameByUserId, userId);
-          return (
-            <li key={c.id}>
-              <Link href={href} className={clsx('chat-sidebar__link', active && 'active')}>
-                <span className="chat-sidebar__title">{title}</span>
-                <span className="chat-sidebar__preview small muted">
-                  {c.last_message?.content?.slice(0, 80) ?? '—'}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <div className="chat-sidebar">
+      <CreateGroupChatForm onCreated={reload} />
+      {state.chats.length === 0 ? (
+        <p className="muted small">No conversations yet. Message someone from their profile or create a group.</p>
+      ) : (
+        <nav>
+          <ul>
+            {state.chats.map((c) => {
+              const href = routes.chatThread(c.id);
+              const active = pathname === href;
+              const title = formatChatTitle(c, state.nameByUserId, userId);
+              return (
+                <li key={c.id}>
+                  <Link href={href} className={clsx('chat-sidebar__link', active && 'active')}>
+                    <span className="chat-sidebar__title">
+                      {title}
+                      {c.is_group ? <span className="chat-sidebar__badge">group</span> : null}
+                    </span>
+                    <span className="chat-sidebar__preview small muted">
+                      {c.last_message?.content?.slice(0, 80) ?? '—'}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
+    </div>
   );
 }

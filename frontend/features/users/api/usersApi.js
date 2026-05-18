@@ -20,12 +20,17 @@ export function createUser(payload) {
   return apiJson(endpoints.users.create, { method: 'POST', body: payload });
 }
 
-/** @param {string} id @param {Record<string, unknown>} data */
+/** @param {string} id @param {{ first_name?: string, last_name?: string, email?: string, dob?: string }} data */
 export function updateUser(id, data) {
-  return apiJson(endpoints.users.one(id), { method: 'PATCH', body: { data } });
+  return apiJson(endpoints.users.one(id), { method: 'PATCH', body: data });
 }
 
 /** @param {string} id */
 export function deleteUser(id) {
   return apiJson(endpoints.users.one(id), { method: 'DELETE' });
+}
+
+/** @param {string} id @param {{ old_password: string, new_password: string }} payload */
+export function changePassword(id, payload) {
+  return apiJson(endpoints.users.changePassword(id), { method: 'PUT', body: payload });
 }

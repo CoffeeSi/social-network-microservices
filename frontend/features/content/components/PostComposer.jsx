@@ -17,7 +17,8 @@ export function PostComposer({ authorId, onCreated }) {
     setError('');
     setPending(true);
     try {
-      const post = await createPost({ author_id: authorId, content: content.trim() });
+      const res = await createPost({ content: content.trim() });
+      const post = res?.post ?? res;
       setContent('');
       onCreated?.(post);
     } catch (err) {

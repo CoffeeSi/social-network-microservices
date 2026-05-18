@@ -1,6 +1,5 @@
 /**
- * REST paths expected from an API gateway that fronts the gRPC microservices.
- * Align your gateway routes with these, or change the paths here to match.
+ * REST paths aligned with api-gateway/internal/transport/http/router.go
  */
 export const endpoints = {
   auth: {
@@ -17,18 +16,27 @@ export const endpoints = {
   },
   content: {
     posts: '/api/v1/posts',
+    myPosts: '/api/v1/posts/me',
     post: (id) => `/api/v1/posts/${encodeURIComponent(id)}`,
+    postStats: (id) => `/api/v1/posts/${encodeURIComponent(id)}/stats`,
     comments: (postId) => `/api/v1/posts/${encodeURIComponent(postId)}/comments`,
-    comment: (postId, commentId) =>
-      `/api/v1/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
+    comment: (id) => `/api/v1/comments/${encodeURIComponent(id)}`,
     like: (postId) => `/api/v1/posts/${encodeURIComponent(postId)}/like`,
   },
   chat: {
     chats: '/api/v1/chats',
     direct: '/api/v1/chats/direct',
     group: '/api/v1/chats/group',
+    chat: (id) => `/api/v1/chats/${encodeURIComponent(id)}`,
+    leave: (id) => `/api/v1/chats/${encodeURIComponent(id)}/leave`,
+    participants: (id) => `/api/v1/chats/${encodeURIComponent(id)}/participants`,
+    participant: (id, userId) =>
+      `/api/v1/chats/${encodeURIComponent(id)}/participants/${encodeURIComponent(userId)}`,
     messages: (chatId) => `/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
     message: (chatId, messageId) =>
       `/api/v1/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}`,
+    readReceipt: (chatId, messageId) =>
+      `/api/v1/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}/read`,
+    typing: (chatId) => `/api/v1/chats/${encodeURIComponent(chatId)}/typing`,
   },
 };

@@ -17,7 +17,7 @@ import (
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/repository/db"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/transport"
 	"github.com/CoffeeSi/social-network-microservices/content-service/internal/usecase"
-	pb "github.com/CoffeeSi/social-network-microservices/content-service/proto"
+	pb "github.com/IsFariza/maxat-protobuf/content-service-pb"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"

@@ -3,7 +3,7 @@ import { Main } from '@/main';
 import { App } from '@/App';
 
 export const metadata = {
-  title: 'Social Network',
+  title: 'MAXat',
   description: 'Client for microservices and API gateway',
 };
 
