@@ -33,7 +33,7 @@ func NewConfig() *Config {
 
 	userGRPCUrl := os.Getenv("USER_GRPC_URL")
 	if userGRPCUrl == "" {
-		userGRPCUrl = "localhost:50052"
+		userGRPCUrl = "localhost:50050"
 	}
 
 	return &Config{
